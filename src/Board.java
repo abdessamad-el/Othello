@@ -24,7 +24,7 @@ public class Board
     cells = new Cell[_nbRows][_nbColumns];
     for (int i = 0; i < _nbRows; i++) {
       for (int j = 0; j < _nbColumns; j++) {
-        cells[i][j] = new Cell(i, j);
+        cells[i][j] = new EmptyCell(i, j);
       }
     }
     int middleRow = _nbRows / 2;

@@ -1,4 +1,6 @@
-public class Cell
+import java.util.List;
+
+public abstract class Cell
 {
 
   protected int _row;
@@ -11,8 +13,13 @@ public class Cell
   }
 
 
-  public void printCell()
-  {
-    System.out.print(" ");
+  public abstract void printCell();
+
+  public int getRow(){
+    return _row;
   }
+  public int getColumn(){
+    return _column;
+  }
+
 }
