@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Board
 {
 
@@ -42,6 +45,37 @@ public class Board
       System.out.println("");
     }
 
+  }
+
+  public List<Cell> getNeighbors(Cell cell)
+  {
+    int row = cell.getRow();
+    int column = cell.getColumn();
+    List<Cell> neighbors = new ArrayList<>();
+
+    int[][] deltas = {
+        {1, 0}, {1, 1}, {1, -1},
+        {0, 1}, {0, -1}, {-1, 0},
+        {-1, 1}, {-1, -1}
+    };
+
+    for (int[] delta : deltas) {
+      int newRow = row + delta[0];
+      int newColumn = column + delta[1];
+
+      if (!isOutOfBounds(newRow, newColumn)) {
+        neighbors.add(cells[newRow][newColumn]);
+
+      }
+    }
+
+    return neighbors;
+
+  }
+
+  private boolean isOutOfBounds(int row, int column)
+  {
+    return row < 0 || row > _nbRows || column < 0 || column > _nbColumns;
   }
 
 
