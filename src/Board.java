@@ -27,12 +27,12 @@ public class Board
         cells[i][j] = new EmptyCell(i, j);
       }
     }
-    int middleRow = _nbRows / 2;
-    int middleColumn = _nbColumns / 2;
+    int middleRow = (_nbRows -1) / 2;
+    int middleColumn = (_nbColumns -1) / 2;
     cells[middleRow][middleColumn] = new Piece(middleRow, middleColumn, Color.White);
-    cells[middleRow][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, Color.Black);
+    cells[middleRow+1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, Color.White);
     cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, Color.Black);
-    cells[middleRow + 1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, Color.White);
+    cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, Color.Black);
   }
 
   public void printBoard()
