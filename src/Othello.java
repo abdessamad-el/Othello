@@ -67,26 +67,21 @@ public class Othello
     public void initialize()
     {
       Dimension labelPrefSize = new Dimension(_cellWidth, _cellWidth);
-      int middleRow = (_nbRows-1) / 2;
-      int middleColumn = (_nbColumns-1) / 2;
+      int middleRow = (_nbRows - 1) / 2;
+      int middleColumn = (_nbColumns - 1) / 2;
       for (int row = 0; row < _nbRows; row++) {
         for (int column = 0; column < _nbColumns; column++) {
           JLabel myLabel;
-          if(row == middleRow && column == middleColumn){
+          if (row == middleRow && column == middleColumn) {
             myLabel = new PieceGui(middleRow, middleColumn, Color.WHITE);
-          }
-          else if(row == middleRow && column == middleColumn + 1){
+          } else if (row == middleRow && column == middleColumn + 1) {
             myLabel = new PieceGui(middleRow, middleColumn + 1, Color.BLACK);
-          }
-
-          else if(row == middleRow + 1 && column == middleColumn){
+          } else if (row == middleRow + 1 && column == middleColumn) {
             myLabel = new PieceGui(middleRow + 1, middleColumn, Color.BLACK);
-          }
-          else if(row == middleRow + 1 && column == middleColumn + 1){
+          } else if (row == middleRow + 1 && column == middleColumn + 1) {
             myLabel = new PieceGui(middleRow + 1, middleColumn + 1, Color.WHITE);
-          }
-          else {
-            myLabel = new GridLabel(row,column);
+          } else {
+            myLabel = new GridLabel(row, column);
           }
           myLabel.setOpaque(true);
           myLabel.setBackground(Color.LIGHT_GRAY);
@@ -128,8 +123,9 @@ public class Othello
   {
     private Color _color;
 
-    public PieceGui(int row , int column, Color color){
-      super(row ,column);
+    public PieceGui(int row, int column, Color color)
+    {
+      super(row, column);
       _color = color;
     }
 
@@ -150,21 +146,25 @@ public class Othello
 
   }
 
-  class GridLabel extends JLabel {
+  class GridLabel extends JLabel
+  {
     protected int _row;
     protected int _column;
 
-    public GridLabel(int row , int column){
+    public GridLabel(int row, int column)
+    {
       super();
       _row = row;
       _column = column;
     }
 
-    public int getRow(){
+    public int getRow()
+    {
       return _row;
     }
 
-    public int getColumn(){
+    public int getColumn()
+    {
       return _column;
     }
 
