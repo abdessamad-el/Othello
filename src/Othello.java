@@ -14,6 +14,19 @@ public class Othello
   {
     Board b = new Board(10, 10);
     b.printBoard();
+    b.makeMove(4, 6, Color.WHITE);
+    System.out.println();
+    b.printBoard();
+    b.makeMove(5, 6, Color.BLACK);
+    System.out.println();
+    b.printBoard();
+    b.makeMove(6, 6, Color.WHITE);
+    System.out.println();
+    b.printBoard();
+    b.makeMove(3, 4, Color.BLACK);
+    System.out.println();
+    b.printBoard();
+
     new Othello().buildGUI();
   }
 
