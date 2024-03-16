@@ -5,29 +5,26 @@ import java.awt.event.MouseEvent;
 import javax.swing.JLabel;
 import javax.swing.border.Border;
 import java.awt.Color;
+import java.util.HashSet;
 
 public class Othello
 {
 
+  private Board board;
+
+  private static final int nbRows = 10;
+
+  private static final int nbColumns = 10;
+
 
   public static void main(String[] args)
   {
-    Board b = new Board(10, 10);
-    b.printBoard();
-    b.makeMove(4, 6, Color.WHITE);
-    System.out.println();
-    b.printBoard();
-    b.makeMove(5, 6, Color.BLACK);
-    System.out.println();
-    b.printBoard();
-    b.makeMove(6, 6, Color.WHITE);
-    System.out.println();
-    b.printBoard();
-    b.makeMove(3, 4, Color.BLACK);
-    System.out.println();
-    b.printBoard();
-
     new Othello().buildGUI();
+  }
+
+  public Othello()
+  {
+    board = new Board(nbRows, nbColumns);
   }
 
 
@@ -39,7 +36,7 @@ public class Othello
     JPanel background = new JPanel(layout);
     background.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     frame.getContentPane().add(background);
-    Grid mainPanel = new Grid(10, 10, 50);
+    Grid mainPanel = new Grid(50);
     background.add(BorderLayout.CENTER, mainPanel);
     frame.setBounds(50, 50, 500, 500);
     frame.pack();
@@ -48,20 +45,43 @@ public class Othello
 
   }
 
-  public class MyMouseListener extends MouseAdapter
+  public class GridListener extends MouseAdapter
   {
-    private Grid grid;
+    // White begin first
+    private Color color = Color.WHITE;
 
-    public MyMouseListener(Grid grid)
+    private Grid _grid;
+
+
+    public GridListener(Grid grid)
     {
-      this.grid = grid;
+      _grid = grid;
     }
 
     @Override
     public void mousePressed(MouseEvent e)
     {
-      if (e.getButton() == MouseEvent.BUTTON1) {
-        grid.labelPressed((GridLabel) e.getSource());
+      PieceGui label = (PieceGui) e.getSource();
+      int rowLabel = label.getRow();
+      int columnLabel = label.getColumn();
+      boolean isValid = board.makeMove(rowLabel, columnLabel, color);
+      if (!isValid) {
+        return;
+      }
+      board.printBoard();
+      HashSet<Piece> changedCells = board.getCellsChanged();
+      _grid.updateGui(changedCells);
+      changePlayer();
+
+
+    }
+
+    private void changePlayer()
+    {
+      if (color == Color.WHITE) {
+        color = Color.BLACK;
+      } else {
+        color = Color.WHITE;
       }
     }
   }
@@ -70,20 +90,17 @@ public class Othello
   public class Grid extends JPanel
   {
     private JLabel[][] cells;
-    private int _nbRows;
-    private int _nbColumns;
-
     private int _cellWidth;
-    MyMouseListener myListener;
+    GridListener myListener;
 
 
     public void initialize()
     {
       Dimension labelPrefSize = new Dimension(_cellWidth, _cellWidth);
-      int middleRow = (_nbRows - 1) / 2;
-      int middleColumn = (_nbColumns - 1) / 2;
-      for (int row = 0; row < _nbRows; row++) {
-        for (int column = 0; column < _nbColumns; column++) {
+      int middleRow = (nbRows - 1) / 2;
+      int middleColumn = (nbColumns - 1) / 2;
+      for (int row = 0; row < nbRows; row++) {
+        for (int column = 0; column < nbColumns; column++) {
           JLabel myLabel;
           if (row == middleRow && column == middleColumn) {
             myLabel = new PieceGui(middleRow, middleColumn, Color.WHITE);
@@ -94,7 +111,7 @@ public class Othello
           } else if (row == middleRow + 1 && column == middleColumn + 1) {
             myLabel = new PieceGui(middleRow + 1, middleColumn + 1, Color.WHITE);
           } else {
-            myLabel = new GridLabel(row, column);
+            myLabel = new PieceGui(row, column, null);
           }
           myLabel.setOpaque(true);
           myLabel.setBackground(Color.LIGHT_GRAY);
@@ -106,39 +123,42 @@ public class Othello
           cells[row][column] = myLabel;
         }
 
-        cells[middleRow][middleColumn] = new PieceGui(middleRow, middleColumn, Color.WHITE);
-        cells[middleRow][middleColumn + 1] = new PieceGui(middleRow + 1, middleColumn + 1, Color.BLACK);
-        cells[middleRow + 1][middleColumn] = new PieceGui(middleRow + 1, middleColumn, Color.BLACK);
-        cells[middleRow + 1][middleColumn + 1] = new PieceGui(middleRow + 1, middleColumn + 1, Color.WHITE);
-
       }
     }
 
-    public Grid(int rows, int cols, int cellWidth)
+    public Grid(int cellWidth)
     {
-      _nbRows = rows;
-      _nbColumns = cols;
       _cellWidth = cellWidth;
-      cells = new JLabel[rows][cols];
-      myListener = new MyMouseListener(this);
-      setLayout(new GridLayout(rows, cols));
+      cells = new JLabel[nbRows][nbColumns];
+      myListener = new GridListener(this);
+      setLayout(new GridLayout(nbColumns, nbColumns));
       initialize();
     }
 
-
-    public void labelPressed(GridLabel label)
+    public void updateGui(HashSet<Piece> changedCells)
     {
-    }
+      for (Piece piece : changedCells) {
+        int row = piece.getRow();
+        int column = piece.getColumn();
+        Color color = piece.getColor();
+        ((PieceGui) cells[row][column]).setColor(color);
 
+
+      }
+    }
   }
 
-  class PieceGui extends GridLabel
+  class PieceGui extends JLabel
   {
     private Color _color;
+    private int _row;
+    private int _column;
 
     public PieceGui(int row, int column, Color color)
     {
-      super(row, column);
+      super();
+      _row = row;
+      _column = column;
       _color = color;
     }
 
@@ -151,24 +171,17 @@ public class Othello
       int nYPosition = nGap;
       int nWidth = getWidth() - nGap * 2;
       int nHeight = getHeight() - nGap * 2;
-
-      g.setColor(_color);
-      g.drawOval(nXPosition, nYPosition, nWidth, nHeight);
-      g.fillOval(nXPosition, nYPosition, nWidth, nHeight);
+      if (_color != null) {
+        g.setColor(_color);
+        g.drawOval(nXPosition, nYPosition, nWidth, nHeight);
+        g.fillOval(nXPosition, nYPosition, nWidth, nHeight);
+      }
     }
 
-  }
-
-  class GridLabel extends JLabel
-  {
-    protected int _row;
-    protected int _column;
-
-    public GridLabel(int row, int column)
+    public void setColor(Color color)
     {
-      super();
-      _row = row;
-      _column = column;
+      _color = color;
+      repaint();
     }
 
     public int getRow()
@@ -184,3 +197,4 @@ public class Othello
   }
 
 }
+

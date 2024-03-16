@@ -38,4 +38,9 @@ public class Piece extends Cell
     _color = Color.WHITE;
   }
   }
+
+  public Color getColor()
+  {
+    return _color;
+  }
 }

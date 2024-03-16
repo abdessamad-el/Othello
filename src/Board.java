@@ -14,6 +14,13 @@ public class Board
 
   private HashSet<Piece> cellsToFlip;
 
+  public HashSet<Piece> getCellsChanged()
+  {
+    return cellsChanged;
+  }
+
+  private HashSet<Piece> cellsChanged;
+
 
   public Board(int nbRows, int nbColumns)
   {
@@ -38,6 +45,7 @@ public class Board
     cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, Color.BLACK);
     cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, Color.BLACK);
     cellsToFlip = new HashSet<>();
+    cellsChanged = new HashSet<>();
   }
 
   public void printBoard()
@@ -80,12 +88,13 @@ public class Board
 
   private boolean isOutOfBounds(int row, int column)
   {
-    return row < 0 || row > _nbRows || column < 0 || column > _nbColumns;
+    return row < 0 || row >= _nbRows || column < 0 || column >= _nbColumns;
   }
 
   public boolean makeMove(int row, int column, Color color)
   {
     cellsToFlip.clear();
+    cellsChanged.clear();
     if (isOutOfBounds(row, column)) {
       return false;
     }
@@ -136,8 +145,10 @@ public class Board
 
     for (Piece piece : cellsToFlip) {
       piece.flip();
+      cellsChanged.add(piece);
     }
     cells[row][column] = new Piece(row, column, color);
+    cellsChanged.add((Piece) cells[row][column]);
 
 
     return true;
