@@ -20,6 +20,7 @@ public class Board
   }
 
   private HashSet<Piece> cellsChanged;
+  private HashSet<Cell> cellsToHighlight;
 
   private int _blackCount;
 
@@ -52,6 +53,7 @@ public class Board
     _whiteCount = 2;
     cellsToFlip = new HashSet<>();
     cellsChanged = new HashSet<>();
+    cellsToHighlight = new HashSet<>();
   }
 
   public void printBoard()
@@ -97,7 +99,7 @@ public class Board
     return row < 0 || row >= _nbRows || column < 0 || column >= _nbColumns;
   }
 
-  public boolean makeMove(final int row, final int column, final Color color)
+  public boolean makeMove(final int row, final int column, final Color color,boolean simuMode)
   {
     cellsToFlip.clear();
     cellsChanged.clear();
@@ -149,6 +151,10 @@ public class Board
       return false;
     }
 
+
+    if(simuMode){
+      return true;
+    }
     for (Piece piece : cellsToFlip) {
       piece.flip();
       cellsChanged.add(piece);
@@ -162,7 +168,25 @@ public class Board
 
     return true;
 
+  }
 
+
+  private void highLightPossibleMoves(Color color){
+    for (int row = 0; row < _nbRows; row++) {
+      for (int column = 0; column < _nbColumns; column++) {
+
+        if(makeMove(row,column,color,true)){
+          cellsToHighlight.add(cells[row][column]);
+        }
+
+      }
+    }
+  }
+
+  public HashSet<Cell> getCellsToHighLight(Color color){
+    cellsToHighlight.clear();
+    highLightPossibleMoves(color);
+    return cellsToHighlight;
   }
 
   public int getPieceCount(Color color)

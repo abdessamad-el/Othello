@@ -37,20 +37,20 @@ public class Othello
   {
     JFrame frame = new JFrame("Othello");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    BorderLayout layout = new BorderLayout();
-    JPanel background = new JPanel(layout);
+  BorderLayout layout = new BorderLayout();
+  JPanel background = new JPanel(layout);
     background.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     frame.getContentPane().add(background);
-    JPanel scorePanel = createScorePanel();
+  JPanel scorePanel = createScorePanel();
     background.add(BorderLayout.NORTH, scorePanel);
-    Grid mainPanel = new Grid(50);
+  Grid mainPanel = new Grid(50);
     background.add(BorderLayout.CENTER, mainPanel);
     frame.setBounds(50, 50, 500, 500);
     frame.pack();
     frame.setVisible(true);
 
 
-  }
+}
 
   private JPanel createScorePanel(Color color)
   {
@@ -114,16 +114,19 @@ public class Othello
       PieceGui label = (PieceGui) e.getSource();
       int rowLabel = label.getRow();
       int columnLabel = label.getColumn();
-      boolean isValid = board.makeMove(rowLabel, columnLabel, color);
+      boolean isValid = board.makeMove(rowLabel, columnLabel, color,false);
       if (!isValid) {
         return;
       }
       board.printBoard();
       HashSet<Piece> changedCells = board.getCellsChanged();
-      _grid.updateGui(changedCells);
+      _grid.clearHighLightedCells();
+      _grid.updateChangedCells(changedCells);
       _blackScore.setText(String.valueOf(board.getPieceCount(Color.BLACK)));
       _whiteScore.setText(String.valueOf(board.getPieceCount(Color.WHITE)));
       changePlayer();
+      HashSet<Cell> cellsToHighLight = board.getCellsToHighLight(color);
+      _grid.highLightCells(cellsToHighLight);
     }
 
     private void changePlayer()
@@ -139,9 +142,11 @@ public class Othello
 
   public class Grid extends JPanel
   {
-    private JLabel[][] cells;
+    private PieceGui[][] cells;
     private int _cellWidth;
     GridListener myListener;
+
+    private HashSet<PieceGui> highLightedCells;
 
 
     public void initialize()
@@ -151,7 +156,7 @@ public class Othello
       int middleColumn = (nbColumns - 1) / 2;
       for (int row = 0; row < nbRows; row++) {
         for (int column = 0; column < nbColumns; column++) {
-          JLabel myLabel;
+          PieceGui myLabel;
           if (row == middleRow && column == middleColumn) {
             myLabel = new PieceGui(middleRow, middleColumn, Color.WHITE);
           } else if (row == middleRow && column == middleColumn + 1) {
@@ -179,30 +184,52 @@ public class Othello
     public Grid(int cellWidth)
     {
       _cellWidth = cellWidth;
-      cells = new JLabel[nbRows][nbColumns];
+      cells = new PieceGui[nbRows][nbColumns];
+      highLightedCells = new HashSet<>();
       myListener = new GridListener(this);
       setLayout(new GridLayout(nbColumns, nbColumns));
       initialize();
     }
 
-    public void updateGui(HashSet<Piece> changedCells)
+    public void updateChangedCells(HashSet<Piece> changedCells)
     {
       for (Piece piece : changedCells) {
         int row = piece.getRow();
         int column = piece.getColumn();
         Color color = piece.getColor();
-        ((PieceGui) cells[row][column]).setColor(color);
-
+        cells[row][column].setColor(color);
 
       }
     }
+
+    public void highLightCells(HashSet<Cell> cellsToHighLight)
+    {
+      for (Cell cell : cellsToHighLight) {
+        int row = cell.getRow();
+        int column = cell.getColumn();
+        highLightedCells.add(cells[row][column]);
+        cells[row][column].toHighlight(true);
+      }
+    }
+
+    public void clearHighLightedCells()
+    {
+      for (PieceGui cell : highLightedCells) {
+        cell.toHighlight(false);
+      }
+      highLightedCells.clear();
+    }
+
   }
+
 
   class PieceGui extends JLabel
   {
     private Color _color;
     private int _row;
     private int _column;
+
+    private boolean toHighlight;
 
     public PieceGui(int row, int column, Color color)
     {
@@ -232,6 +259,9 @@ public class Othello
         g.drawOval(nXPosition, nYPosition, nWidth, nHeight);
         g.fillOval(nXPosition, nYPosition, nWidth, nHeight);
       }
+      if (toHighlight) {
+        g.drawOval(nXPosition, nYPosition, nWidth, nHeight);
+      }
     }
 
     public void setColor(Color color)
@@ -248,6 +278,12 @@ public class Othello
     public int getColumn()
     {
       return _column;
+    }
+
+    public void toHighlight(boolean isToHighLight)
+    {
+      toHighlight = isToHighLight;
+      repaint();
     }
 
   }
