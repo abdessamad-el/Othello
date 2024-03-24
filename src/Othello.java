@@ -17,9 +17,9 @@ public class Othello
   private JLabel _whiteScore;
 
 
-  private static final int nbRows = 6;
+  private static final int nbRows = 10;
 
-  private static final int nbColumns = 6;
+  private static final int nbColumns = 10;
 
 
   public static void main(String[] args)
@@ -41,7 +41,8 @@ public class Othello
     JPanel background = new JPanel(layout);
     background.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     frame.getContentPane().add(background);
-    background.add(BorderLayout.NORTH, createScorePanel());
+    JPanel scorePanel = createScorePanel();
+    background.add(BorderLayout.NORTH, scorePanel);
     Grid mainPanel = new Grid(50);
     background.add(BorderLayout.CENTER, mainPanel);
     frame.setBounds(50, 50, 500, 500);
@@ -57,22 +58,31 @@ public class Othello
     JPanel scorePanel = new JPanel();
     Dimension labelPrefSize = new Dimension(50, 50);
     JLabel piece = new PieceGui(color);
+    piece.setOpaque(true);
     piece.setPreferredSize(labelPrefSize);
 
     if (color == Color.BLACK) {
-      JLabel score = new JLabel("2");
-      _blackScore = score;
+      JLabel blackScore = createScoreLabel(labelPrefSize);
+      _blackScore = blackScore;
       scorePanel.add(piece);
-      scorePanel.add(score);
+      scorePanel.add(blackScore);
     } else {
-      JLabel score = new JLabel("2");
-      _whiteScore = score;
-      scorePanel.add(score);
+      JLabel whiteScore = createScoreLabel(labelPrefSize);
+      _whiteScore = whiteScore;
+      scorePanel.add(whiteScore);
       scorePanel.add(piece);
     }
-
     return scorePanel;
 
+  }
+
+  private JLabel createScoreLabel(Dimension labelPrefSize)
+  {
+    JLabel score = new JLabel("2", SwingConstants.CENTER);
+    score.setOpaque(true);
+    score.setPreferredSize(labelPrefSize);
+    score.setFont(new Font("Calibri", Font.BOLD, 20));
+    return score;
   }
 
   private JPanel createScorePanel()
@@ -80,6 +90,8 @@ public class Othello
     JPanel scorePanel = new JPanel(new BorderLayout());
     scorePanel.add(BorderLayout.EAST, createScorePanel(Color.WHITE));
     scorePanel.add(BorderLayout.WEST, createScorePanel(Color.BLACK));
+    scorePanel.add(Box.createVerticalStrut(70));
+    scorePanel.setBorder(BorderFactory.createLineBorder(Color.GRAY,5));
     return scorePanel;
   }
 
