@@ -21,6 +21,10 @@ public class Board
 
   private HashSet<Piece> cellsChanged;
 
+  private int _blackCount;
+
+  private int _whiteCount;
+
 
   public Board(int nbRows, int nbColumns)
   {
@@ -44,6 +48,8 @@ public class Board
     cells[middleRow + 1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, Color.WHITE);
     cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, Color.BLACK);
     cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, Color.BLACK);
+    _blackCount = 2;
+    _whiteCount = 2;
     cellsToFlip = new HashSet<>();
     cellsChanged = new HashSet<>();
   }
@@ -91,7 +97,7 @@ public class Board
     return row < 0 || row >= _nbRows || column < 0 || column >= _nbColumns;
   }
 
-  public boolean makeMove(int row, int column, Color color)
+  public boolean makeMove(final int row, final int column, final Color color)
   {
     cellsToFlip.clear();
     cellsChanged.clear();
@@ -147,13 +153,44 @@ public class Board
       piece.flip();
       cellsChanged.add(piece);
     }
+    updatePieceCount(color, cellsToFlip.size());
+    updatePieceCount(getOppositeColor(color), -cellsToFlip.size());
+
     cells[row][column] = new Piece(row, column, color);
     cellsChanged.add((Piece) cells[row][column]);
-
+    updatePieceCount(color, 1);
 
     return true;
 
 
+  }
+
+  public int getPieceCount(Color color)
+  {
+    if (color == Color.BLACK) {
+      return _blackCount;
+    } else {
+      return _whiteCount;
+    }
+  }
+
+  private void updatePieceCount(Color color, int number)
+  {
+
+    if (color == Color.WHITE) {
+      _whiteCount += number;
+    } else if (color == Color.BLACK) {
+      _blackCount += number;
+    }
+  }
+
+  public Color getOppositeColor(Color color)
+  {
+    if (color == Color.WHITE) {
+      return Color.BLACK;
+    } else {
+      return Color.WHITE;
+    }
   }
 
 

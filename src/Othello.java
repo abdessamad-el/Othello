@@ -12,9 +12,14 @@ public class Othello
 
   private Board board;
 
-  private static final int nbRows = 10;
+  private JLabel _blackScore;
 
-  private static final int nbColumns = 10;
+  private JLabel _whiteScore;
+
+
+  private static final int nbRows = 6;
+
+  private static final int nbColumns = 6;
 
 
   public static void main(String[] args)
@@ -36,6 +41,7 @@ public class Othello
     JPanel background = new JPanel(layout);
     background.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     frame.getContentPane().add(background);
+    background.add(BorderLayout.NORTH, createScorePanel());
     Grid mainPanel = new Grid(50);
     background.add(BorderLayout.CENTER, mainPanel);
     frame.setBounds(50, 50, 500, 500);
@@ -43,6 +49,38 @@ public class Othello
     frame.setVisible(true);
 
 
+  }
+
+  private JPanel createScorePanel(Color color)
+  {
+
+    JPanel scorePanel = new JPanel();
+    Dimension labelPrefSize = new Dimension(50, 50);
+    JLabel piece = new PieceGui(color);
+    piece.setPreferredSize(labelPrefSize);
+
+    if (color == Color.BLACK) {
+      JLabel score = new JLabel("2");
+      _blackScore = score;
+      scorePanel.add(piece);
+      scorePanel.add(score);
+    } else {
+      JLabel score = new JLabel("2");
+      _whiteScore = score;
+      scorePanel.add(score);
+      scorePanel.add(piece);
+    }
+
+    return scorePanel;
+
+  }
+
+  private JPanel createScorePanel()
+  {
+    JPanel scorePanel = new JPanel(new BorderLayout());
+    scorePanel.add(BorderLayout.EAST, createScorePanel(Color.WHITE));
+    scorePanel.add(BorderLayout.WEST, createScorePanel(Color.BLACK));
+    return scorePanel;
   }
 
   public class GridListener extends MouseAdapter
@@ -71,9 +109,9 @@ public class Othello
       board.printBoard();
       HashSet<Piece> changedCells = board.getCellsChanged();
       _grid.updateGui(changedCells);
+      _blackScore.setText(String.valueOf(board.getPieceCount(Color.BLACK)));
+      _whiteScore.setText(String.valueOf(board.getPieceCount(Color.WHITE)));
       changePlayer();
-
-
     }
 
     private void changePlayer()
@@ -159,6 +197,12 @@ public class Othello
       super();
       _row = row;
       _column = column;
+      _color = color;
+    }
+
+    public PieceGui(Color color)
+    {
+      super();
       _color = color;
     }
 
