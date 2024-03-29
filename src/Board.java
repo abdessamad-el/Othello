@@ -1,7 +1,9 @@
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 public class Board
 {
@@ -14,17 +16,17 @@ public class Board
 
   private HashSet<Piece> cellsToFlip;
 
-  public HashSet<Piece> getCellsChanged()
-  {
-    return cellsChanged;
-  }
-
   private HashSet<Piece> cellsChanged;
   private HashSet<Cell> cellsToHighlight;
 
   private int _blackCount;
-
   private int _whiteCount;
+
+  private Map<Color, Map<String, Integer>> positionStats;   // { Color.WHITE : {"rowInf" : 2,"rowMax" : 1,"column_max" : 2 , "column_min" : 5}
+  private final static String ROW_MAX = "row_max";
+  private final static String ROW_MIN = "row_min";
+  private final static String COLUMN_MAX = "column_max";
+  private final static String COLUMN_MIN = "column_min";
 
 
   public Board(int nbRows, int nbColumns)
@@ -54,6 +56,24 @@ public class Board
     cellsToFlip = new HashSet<>();
     cellsChanged = new HashSet<>();
     cellsToHighlight = new HashSet<>();
+    initPositionStats(middleRow, middleColumn);
+  }
+
+  public void initPositionStats(int middleRow, int middleColumn)
+  {
+    positionStats = new HashMap<>();
+    Map<String, Integer> whiteStats = new HashMap<>();
+    whiteStats.put(ROW_MIN, middleRow);
+    whiteStats.put(ROW_MAX, middleRow + 1);
+    whiteStats.put(COLUMN_MIN, middleColumn);
+    whiteStats.put(COLUMN_MAX, middleColumn + 1);
+    Map<String, Integer> blackStats = new HashMap<>();
+    blackStats.put(ROW_MIN, middleRow);
+    blackStats.put(ROW_MAX, middleRow + 1);
+    blackStats.put(COLUMN_MIN, middleColumn);
+    blackStats.put(COLUMN_MAX, middleColumn + 1);
+    positionStats.put(Color.WHITE, whiteStats);
+    positionStats.put(Color.BLACK, blackStats);
   }
 
   public void printBoard()
@@ -157,12 +177,14 @@ public class Board
     }
     for (Piece piece : cellsToFlip) {
       piece.flip();
+      updatePositionStats(piece.getRow(), piece.getColumn(), piece.getColor());
       cellsChanged.add(piece);
     }
     updatePieceCount(color, cellsToFlip.size());
     updatePieceCount(getOppositeColor(color), -cellsToFlip.size());
 
     cells[row][column] = new Piece(row, column, color);
+    updatePositionStats(row, column, color);
     cellsChanged.add((Piece) cells[row][column]);
     updatePieceCount(color, 1);
 
@@ -172,8 +194,9 @@ public class Board
 
 
   private void highLightPossibleMoves(Color color){
-    for (int row = 0; row < _nbRows; row++) {
-      for (int column = 0; column < _nbColumns; column++) {
+    Map<String,Integer> colorStats = positionStats.get(color);
+    for (int row = colorStats.get(ROW_MIN) - 1; row <= colorStats.get(ROW_MAX) + 1; row++) {
+      for (int column = colorStats.get(COLUMN_MIN) - 1; column <= colorStats.get(COLUMN_MAX) + 1; column++) {
 
         if(makeMove(row,column,color,true)){
           cellsToHighlight.add(cells[row][column]);
@@ -217,5 +240,16 @@ public class Board
     }
   }
 
+  public HashSet<Piece> getCellsChanged()
+  {
+    return cellsChanged;
+  }
 
+  public void updatePositionStats(int row , int column , Color color){
+    Map<String,Integer> colorStats = positionStats.get(color);
+    colorStats.put(ROW_MIN,Math.min(row,colorStats.get(ROW_MIN)));
+    colorStats.put(ROW_MAX,Math.max(column,colorStats.get(ROW_MAX)));
+    colorStats.put(COLUMN_MAX,Math.max(column,colorStats.get(COLUMN_MAX)));
+    colorStats.put(COLUMN_MIN,Math.min(column,colorStats.get(COLUMN_MIN)));
+  }
 }
