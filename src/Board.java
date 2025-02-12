@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -8,21 +9,18 @@ import java.util.Map;
 public class Board
 {
 
-  private final int _nbRows;
-
-  private final int _nbColumns;
-
+  private final int numRows;
+  private final int numColumns;
   private Cell[][] cells;
 
   private HashSet<Piece> cellsToFlip;
-
   private HashSet<Piece> cellsChanged;
   private HashSet<Cell> cellsToHighlight;
 
-  private int _blackCount;
-  private int _whiteCount;
+  private int blackCount;
+  private int whiteCount;
 
-  private Map<Color, Map<String, Integer>> positionStats;   // { Color.WHITE : {"rowInf" : 2,"rowMax" : 1,"column_max" : 2 , "column_min" : 5}
+  private Map<Color,PositionStats> positionStats;
   private final static String ROW_MAX = "row_max";
   private final static String ROW_MIN = "row_min";
   private final static String COLUMN_MAX = "column_max";
@@ -31,28 +29,28 @@ public class Board
 
   public Board(int nbRows, int nbColumns)
   {
-    _nbRows = nbRows;
-    _nbColumns = nbColumns;
+    numRows = nbRows;
+    numColumns = nbColumns;
     initBoard();
 
   }
 
   private void initBoard()
   {
-    cells = new Cell[_nbRows][_nbColumns];
-    for (int i = 0; i < _nbRows; i++) {
-      for (int j = 0; j < _nbColumns; j++) {
+    cells = new Cell[numRows][numColumns];
+    for (int i = 0; i < numRows; i++) {
+      for (int j = 0; j < numColumns; j++) {
         cells[i][j] = new EmptyCell(i, j);
       }
     }
-    int middleRow = (_nbRows - 1) / 2;
-    int middleColumn = (_nbColumns - 1) / 2;
+    int middleRow = (numRows - 1) / 2;
+    int middleColumn = (numColumns - 1) / 2;
     cells[middleRow][middleColumn] = new Piece(middleRow, middleColumn, Color.WHITE);
     cells[middleRow + 1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, Color.WHITE);
     cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, Color.BLACK);
     cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, Color.BLACK);
-    _blackCount = 2;
-    _whiteCount = 2;
+    blackCount = 2;
+    whiteCount = 2;
     cellsToFlip = new HashSet<>();
     cellsChanged = new HashSet<>();
     cellsToHighlight = new HashSet<>();
@@ -62,117 +60,72 @@ public class Board
   public void initPositionStats(int middleRow, int middleColumn)
   {
     positionStats = new HashMap<>();
-    Map<String, Integer> whiteStats = new HashMap<>();
-    whiteStats.put(ROW_MIN, middleRow);
-    whiteStats.put(ROW_MAX, middleRow + 1);
-    whiteStats.put(COLUMN_MIN, middleColumn);
-    whiteStats.put(COLUMN_MAX, middleColumn + 1);
-    Map<String, Integer> blackStats = new HashMap<>();
-    blackStats.put(ROW_MIN, middleRow);
-    blackStats.put(ROW_MAX, middleRow + 1);
-    blackStats.put(COLUMN_MIN, middleColumn);
-    blackStats.put(COLUMN_MAX, middleColumn + 1);
+    // Both colors start with the same bounds based on the initial positions.
+    PositionStats whiteStats = new PositionStats(middleRow, middleRow + 1, middleColumn, middleColumn + 1);
+    PositionStats blackStats = new PositionStats(middleRow, middleRow + 1, middleColumn, middleColumn + 1);
     positionStats.put(Color.WHITE, whiteStats);
     positionStats.put(Color.BLACK, blackStats);
   }
 
   public void printBoard()
   {
-    for (int i = 0; i < _nbRows; i++) {
-      for (int j = 0; j < _nbColumns; j++) {
+    for (int i = 0; i < numRows; i++) {
+      for (int j = 0; j < numColumns; j++) {
         cells[i][j].printCell();
         System.out.print(",");
       }
-      System.out.println("");
+      System.out.println();
     }
 
   }
 
-  public List<Cell> getNeighbors(Cell cell)
-  {
-    int row = cell.getRow();
-    int column = cell.getColumn();
-    List<Cell> neighbors = new ArrayList<>();
-
-    int[][] deltas = {
-        {1, 0}, {1, 1}, {1, -1},
-        {0, 1}, {0, -1}, {-1, 0},
-        {-1, 1}, {-1, -1}
-    };
-
-    for (int[] delta : deltas) {
-      int newRow = row + delta[0];
-      int newColumn = column + delta[1];
-
-      if (!isOutOfBounds(newRow, newColumn)) {
-        neighbors.add(cells[newRow][newColumn]);
-
-      }
-    }
-
-    return neighbors;
-
+  private boolean isOutOfBounds(int row, int column){
+    return row < 0 || row >= numRows || column < 0 || column >= numColumns;
   }
 
-  private boolean isOutOfBounds(int row, int column)
-  {
-    return row < 0 || row >= _nbRows || column < 0 || column >= _nbColumns;
-  }
-
-  public boolean makeMove(final int row, final int column, final Color color,boolean simuMode)
+  public boolean makeMove(final int row, final int column, final Color color, boolean simuMode)
   {
     cellsToFlip.clear();
     cellsChanged.clear();
-    if (isOutOfBounds(row, column)) {
-      return false;
-    }
-    if (cells[row][column] instanceof Piece) {
-      return false;
-    }
-
-    List<Cell> neighbors = getNeighbors(cells[row][column]);
-    List<Piece> neighborsOfdifferntColor = new ArrayList<>();
-    for (Cell neighbour : neighbors) {
-      if (neighbour instanceof Piece && ((Piece) neighbour)._color != color) {
-        neighborsOfdifferntColor.add((Piece) neighbour);
-      }
-    }
-    if (neighborsOfdifferntColor.isEmpty()) {
+    // Check if the move is out-of-bounds or the cell is already occupied.
+    if (isOutOfBounds(row, column) || cells[row][column] instanceof Piece) {
       return false;
     }
 
+    // Define all 8 possible directions.
+    int[][] directions = {
+        {-1, -1}, {-1, 0}, {-1, 1},
+        { 0, -1},          { 0, 1},
+        { 1, -1}, { 1, 0}, { 1, 1}
+    };
 
-    for (Piece neighbor : neighborsOfdifferntColor) {
+    // For each direction, calculate flips if the immediate neighbor is an opponent.
+    for (int[] dir : directions) {
+      int deltaRow = dir[0];
+      int deltaCol = dir[1];
+      int neighborRow = row + deltaRow;
+      int neighborCol = column + deltaCol;
 
-      int[] delta = {neighbor.getRow() - row, neighbor.getColumn() - column};
-      int newRow = row + delta[0];
-      int newColumn = column + delta[1];
-      while (!isOutOfBounds(newRow, newColumn)
-             && cells[newRow][newColumn] instanceof Piece
-             && ((Piece) cells[newRow][newColumn])._color != color) {
-        cellsToFlip.add((Piece) cells[newRow][newColumn]);
-        newRow += delta[0];
-        newColumn += delta[1];
-
+      if (isOutOfBounds(neighborRow, neighborCol)) {
+        continue;
       }
-      if (isOutOfBounds(newRow, newColumn) || cells[newRow][newColumn] instanceof EmptyCell) {
-        //rollback flipped pieces
-        newRow -= delta[0];
-        newColumn -= delta[1];
-        while (cells[newRow][newColumn] != cells[row][column]) {
-          cellsToFlip.remove((Piece) cells[newRow][newColumn]);
-          newRow -= delta[0];
-          newColumn -= delta[1];
-        }
+      if (!(cells[neighborRow][neighborCol] instanceof Piece)) {
+        continue;
       }
-
+      Piece neighborPiece = (Piece) cells[neighborRow][neighborCol];
+      if (neighborPiece.getColor() == color) {
+        continue;
+      }
+      // Get flips in this direction.
+      List<Piece> flips = getFlipsInDirection(row, column, deltaRow, deltaCol, color);
+      cellsToFlip.addAll(flips);
     }
+
     if (cellsToFlip.isEmpty()) {
       return false;
     }
 
-
-    if(simuMode){
+    if (simuMode) {
       return true;
     }
     for (Piece piece : cellsToFlip) {
@@ -192,32 +145,67 @@ public class Board
 
   }
 
+  /**
+   *  Returns the list of opponent pieces that would be flipped in the given direction,
+   * starting from (row, col). If the direction does not end with a piece of the same color,
+   * an empty list is returned.
+ */
+  private List<Piece> getFlipsInDirection(int row, int col, int deltaRow, int deltaCol, Color color) {
+    List<Piece> flips = new ArrayList<>();
+    int r = row + deltaRow;
+    int c = col + deltaCol;
 
-  private void highLightPossibleMoves(Color color){
-    Map<String,Integer> colorStats = positionStats.get(color);
-    for (int row = colorStats.get(ROW_MIN) - 1; row <= colorStats.get(ROW_MAX) + 1; row++) {
-      for (int column = colorStats.get(COLUMN_MIN) - 1; column <= colorStats.get(COLUMN_MAX) + 1; column++) {
-
-        if(makeMove(row,column,color,true)){
-          cellsToHighlight.add(cells[row][column]);
+    while (!isOutOfBounds(r, c)) {
+      Cell cell = cells[r][c];
+      if (cell instanceof EmptyCell) {
+        // No enclosing piece; invalid direction.
+        return Collections.emptyList();
+      }
+      if (cell instanceof Piece) {
+        Piece piece = (Piece) cell;
+        if (piece.getColor() == color) {
+          // Only valid if at least one opponent piece is in between.
+          return flips.isEmpty() ? Collections.emptyList() : flips;
+        } else {
+          flips.add(piece);
         }
+      }
+      r += deltaRow;
+      c += deltaCol;
+    }
+    // Went off-board without closing with a piece of the same color.
+    return Collections.emptyList();
+  }
 
+
+  private void highlightPossibleMoves(Color color) {
+    PositionStats stats = positionStats.get(color);
+    int rowMin = stats.getRowMin();
+    int rowMax = stats.getRowMax();
+    int colMin = stats.getColMin();
+    int colMax = stats.getColMax();
+    for (int row = rowMin - 1; row <= rowMax + 1; row++) {
+      for (int col = colMin - 1; col <= colMax + 1; col++) {
+        if (!isOutOfBounds(row, col) && makeMove(row, col, color, true)) {
+          cellsToHighlight.add(cells[row][col]);
+        }
       }
     }
   }
 
-  public HashSet<Cell> getCellsToHighLight(Color color){
+  public HashSet<Cell> getCellsToHighLight(Color color)
+  {
     cellsToHighlight.clear();
-    highLightPossibleMoves(color);
+    highlightPossibleMoves(color);
     return cellsToHighlight;
   }
 
   public int getPieceCount(Color color)
   {
     if (color == Color.BLACK) {
-      return _blackCount;
+      return blackCount;
     } else {
-      return _whiteCount;
+      return whiteCount;
     }
   }
 
@@ -225,19 +213,15 @@ public class Board
   {
 
     if (color == Color.WHITE) {
-      _whiteCount += number;
+      whiteCount += number;
     } else if (color == Color.BLACK) {
-      _blackCount += number;
+      blackCount += number;
     }
   }
 
   public Color getOppositeColor(Color color)
   {
-    if (color == Color.WHITE) {
-      return Color.BLACK;
-    } else {
-      return Color.WHITE;
-    }
+    return color.equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
   }
 
   public HashSet<Piece> getCellsChanged()
@@ -245,11 +229,9 @@ public class Board
     return cellsChanged;
   }
 
-  public void updatePositionStats(int row , int column , Color color){
-    Map<String,Integer> colorStats = positionStats.get(color);
-    colorStats.put(ROW_MIN,Math.min(row,colorStats.get(ROW_MIN)));
-    colorStats.put(ROW_MAX,Math.max(column,colorStats.get(ROW_MAX)));
-    colorStats.put(COLUMN_MAX,Math.max(column,colorStats.get(COLUMN_MAX)));
-    colorStats.put(COLUMN_MIN,Math.min(column,colorStats.get(COLUMN_MIN)));
+  public void updatePositionStats(int row, int column, Color color)
+  {
+    PositionStats stats = positionStats.get(color);
+    stats.update(row, column);
   }
 }

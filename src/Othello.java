@@ -10,7 +10,10 @@ import java.util.HashSet;
 public class Othello
 {
 
-  private Board board;
+
+  private final Board board;
+
+  private Player[] players;
 
   private JLabel _blackScore;
 
@@ -30,6 +33,9 @@ public class Othello
   public Othello()
   {
     board = new Board(nbRows, nbColumns);
+    players = new Player[2];
+    players[0] = new Player(Color.BLACK,this);
+    players[1] = new Player(Color.WHITE,this);
   }
 
 
@@ -37,19 +43,17 @@ public class Othello
   {
     JFrame frame = new JFrame("Othello");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-  BorderLayout layout = new BorderLayout();
-  JPanel background = new JPanel(layout);
+    BorderLayout layout = new BorderLayout();
+    JPanel background = new JPanel(layout);
     background.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     frame.getContentPane().add(background);
-  JPanel scorePanel = createScorePanel();
+    JPanel scorePanel = createScorePanel();
     background.add(BorderLayout.NORTH, scorePanel);
-  Grid mainPanel = new Grid(50);
+    Grid mainPanel = new Grid(50);
     background.add(BorderLayout.CENTER, mainPanel);
     frame.setBounds(50, 50, 500, 500);
     frame.pack();
     frame.setVisible(true);
-
-
 }
 
   private JPanel createScorePanel(Color color)
@@ -286,6 +290,11 @@ public class Othello
       repaint();
     }
 
+  }
+
+  public Board getBoard()
+  {
+    return board;
   }
 
 }

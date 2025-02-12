@@ -11,14 +11,6 @@ public class Piece extends Cell
     _color = Color;
   }
 
-  @Override
-  public boolean equals(Object obj)
-  {
-    if (!(obj instanceof Piece)) {
-      return false;
-    }
-    return _row == ((Piece) obj)._row && _column == ((Piece) obj)._column && _color == ((Piece) obj)._color;
-  }
 
   @Override
   public void printCell()
