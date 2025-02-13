@@ -1,3 +1,5 @@
+package com.project.reversi;
+
 public class PositionStats {
   private int rowMin;
   private int rowMax;

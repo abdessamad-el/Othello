@@ -1,3 +1,5 @@
+package com.project.reversi;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,20 +14,13 @@ public class Board
   private final int numRows;
   private final int numColumns;
   private Cell[][] cells;
-
   private HashSet<Piece> cellsToFlip;
   private HashSet<Piece> cellsChanged;
   private HashSet<Cell> cellsToHighlight;
 
   private int blackCount;
   private int whiteCount;
-
-  private Map<Color,PositionStats> positionStats;
-  private final static String ROW_MAX = "row_max";
-  private final static String ROW_MIN = "row_min";
-  private final static String COLUMN_MAX = "column_max";
-  private final static String COLUMN_MIN = "column_min";
-
+  private Map<Color, PositionStats> positionStats;
 
   public Board(int nbRows, int nbColumns)
   {

@@ -1,3 +1,6 @@
+package com.project.reversi;
+
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -7,8 +10,7 @@ import javax.swing.border.Border;
 import java.awt.Color;
 import java.util.HashSet;
 
-public class Othello
-{
+public class Othello {
 
 
   private final Board board;
@@ -25,22 +27,19 @@ public class Othello
   private static final int nbColumns = 10;
 
 
-  public static void main(String[] args)
-  {
+  public static void main(String[] args) {
     new Othello().buildGUI();
   }
 
-  public Othello()
-  {
+  public Othello() {
     board = new Board(nbRows, nbColumns);
     players = new Player[2];
-    players[0] = new Player(Color.BLACK,this);
-    players[1] = new Player(Color.WHITE,this);
+    players[0] = new Player(Color.BLACK, this);
+    players[1] = new Player(Color.WHITE, this);
   }
 
 
-  public void buildGUI()
-  {
+  public void buildGUI() {
     JFrame frame = new JFrame("Othello");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     BorderLayout layout = new BorderLayout();
@@ -54,10 +53,9 @@ public class Othello
     frame.setBounds(50, 50, 500, 500);
     frame.pack();
     frame.setVisible(true);
-}
+  }
 
-  private JPanel createScorePanel(Color color)
-  {
+  private JPanel createScorePanel(Color color) {
 
     JPanel scorePanel = new JPanel();
     Dimension labelPrefSize = new Dimension(50, 50);
@@ -80,8 +78,7 @@ public class Othello
 
   }
 
-  private JLabel createScoreLabel(Dimension labelPrefSize)
-  {
+  private JLabel createScoreLabel(Dimension labelPrefSize) {
     JLabel score = new JLabel("2", SwingConstants.CENTER);
     score.setOpaque(true);
     score.setPreferredSize(labelPrefSize);
@@ -89,36 +86,32 @@ public class Othello
     return score;
   }
 
-  private JPanel createScorePanel()
-  {
+  private JPanel createScorePanel() {
     JPanel scorePanel = new JPanel(new BorderLayout());
     scorePanel.add(BorderLayout.EAST, createScorePanel(Color.WHITE));
     scorePanel.add(BorderLayout.WEST, createScorePanel(Color.BLACK));
     scorePanel.add(Box.createVerticalStrut(70));
-    scorePanel.setBorder(BorderFactory.createLineBorder(Color.GRAY,5));
+    scorePanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 5));
     return scorePanel;
   }
 
-  public class GridListener extends MouseAdapter
-  {
+  public class GridListener extends MouseAdapter {
     // White begin first
     private Color color = Color.WHITE;
 
     private Grid _grid;
 
 
-    public GridListener(Grid grid)
-    {
+    public GridListener(Grid grid) {
       _grid = grid;
     }
 
     @Override
-    public void mousePressed(MouseEvent e)
-    {
+    public void mousePressed(MouseEvent e) {
       PieceGui label = (PieceGui) e.getSource();
       int rowLabel = label.getRow();
       int columnLabel = label.getColumn();
-      boolean isValid = board.makeMove(rowLabel, columnLabel, color,false);
+      boolean isValid = board.makeMove(rowLabel, columnLabel, color, false);
       if (!isValid) {
         return;
       }
@@ -133,8 +126,7 @@ public class Othello
       _grid.highLightCells(cellsToHighLight);
     }
 
-    private void changePlayer()
-    {
+    private void changePlayer() {
       if (color == Color.WHITE) {
         color = Color.BLACK;
       } else {
@@ -144,8 +136,7 @@ public class Othello
   }
 
 
-  public class Grid extends JPanel
-  {
+  public class Grid extends JPanel {
     private PieceGui[][] cells;
     private int _cellWidth;
     GridListener myListener;
@@ -153,8 +144,7 @@ public class Othello
     private HashSet<PieceGui> highLightedCells;
 
 
-    public void initialize()
-    {
+    public void initialize() {
       Dimension labelPrefSize = new Dimension(_cellWidth, _cellWidth);
       int middleRow = (nbRows - 1) / 2;
       int middleColumn = (nbColumns - 1) / 2;
@@ -181,12 +171,10 @@ public class Othello
           add(myLabel);
           cells[row][column] = myLabel;
         }
-
       }
     }
 
-    public Grid(int cellWidth)
-    {
+    public Grid(int cellWidth) {
       _cellWidth = cellWidth;
       cells = new PieceGui[nbRows][nbColumns];
       highLightedCells = new HashSet<>();
@@ -195,8 +183,7 @@ public class Othello
       initialize();
     }
 
-    public void updateChangedCells(HashSet<Piece> changedCells)
-    {
+    public void updateChangedCells(HashSet<Piece> changedCells) {
       for (Piece piece : changedCells) {
         int row = piece.getRow();
         int column = piece.getColumn();
@@ -206,8 +193,7 @@ public class Othello
       }
     }
 
-    public void highLightCells(HashSet<Cell> cellsToHighLight)
-    {
+    public void highLightCells(HashSet<Cell> cellsToHighLight) {
       for (Cell cell : cellsToHighLight) {
         int row = cell.getRow();
         int column = cell.getColumn();
@@ -216,8 +202,7 @@ public class Othello
       }
     }
 
-    public void clearHighLightedCells()
-    {
+    public void clearHighLightedCells() {
       for (PieceGui cell : highLightedCells) {
         cell.toHighlight(false);
       }
@@ -227,31 +212,27 @@ public class Othello
   }
 
 
-  class PieceGui extends JLabel
-  {
+  class PieceGui extends JLabel {
     private Color _color;
     private int _row;
     private int _column;
 
     private boolean toHighlight;
 
-    public PieceGui(int row, int column, Color color)
-    {
+    public PieceGui(int row, int column, Color color) {
       super();
       _row = row;
       _column = column;
       _color = color;
     }
 
-    public PieceGui(Color color)
-    {
+    public PieceGui(Color color) {
       super();
       _color = color;
     }
 
     @Override
-    protected void paintComponent(Graphics g)
-    {
+    protected void paintComponent(Graphics g) {
       super.paintComponent(g);
       int nGap = 5;
       int nXPosition = nGap;
@@ -268,32 +249,27 @@ public class Othello
       }
     }
 
-    public void setColor(Color color)
-    {
+    public void setColor(Color color) {
       _color = color;
       repaint();
     }
 
-    public int getRow()
-    {
+    public int getRow() {
       return _row;
     }
 
-    public int getColumn()
-    {
+    public int getColumn() {
       return _column;
     }
 
-    public void toHighlight(boolean isToHighLight)
-    {
+    public void toHighlight(boolean isToHighLight) {
       toHighlight = isToHighLight;
       repaint();
     }
 
   }
 
-  public Board getBoard()
-  {
+  public Board getBoard() {
     return board;
   }
 

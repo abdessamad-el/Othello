@@ -1,3 +1,5 @@
+package com.project.reversi;
+
 public class EmptyCell extends Cell
 {
 

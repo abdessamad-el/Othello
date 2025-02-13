@@ -31,3 +31,6 @@ bin/
 ### idea ###
 # Ignore IntelliJ IDEA workspace files
 .idea/
+
+## Maeven ###
+target/
