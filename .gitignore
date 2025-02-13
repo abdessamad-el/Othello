@@ -27,3 +27,7 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### idea ###
+# Ignore IntelliJ IDEA workspace files
+.idea/
