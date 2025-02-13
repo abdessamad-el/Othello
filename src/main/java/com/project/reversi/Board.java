@@ -8,8 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-public class Board
-{
+public class Board {
 
   private final int numRows;
   private final int numColumns;
@@ -22,16 +21,14 @@ public class Board
   private int whiteCount;
   private Map<Color, PositionStats> positionStats;
 
-  public Board(int nbRows, int nbColumns)
-  {
+  public Board(int nbRows, int nbColumns) {
     numRows = nbRows;
     numColumns = nbColumns;
     initBoard();
 
   }
 
-  private void initBoard()
-  {
+  private void initBoard() {
     cells = new Cell[numRows][numColumns];
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
@@ -52,8 +49,7 @@ public class Board
     initPositionStats(middleRow, middleColumn);
   }
 
-  public void initPositionStats(int middleRow, int middleColumn)
-  {
+  public void initPositionStats(int middleRow, int middleColumn) {
     positionStats = new HashMap<>();
     // Both colors start with the same bounds based on the initial positions.
     PositionStats whiteStats = new PositionStats(middleRow, middleRow + 1, middleColumn, middleColumn + 1);
@@ -62,8 +58,7 @@ public class Board
     positionStats.put(Color.BLACK, blackStats);
   }
 
-  public void printBoard()
-  {
+  public void printBoard() {
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
         cells[i][j].printCell();
@@ -74,12 +69,11 @@ public class Board
 
   }
 
-  private boolean isOutOfBounds(int row, int column){
+  private boolean isOutOfBounds(int row, int column) {
     return row < 0 || row >= numRows || column < 0 || column >= numColumns;
   }
 
-  public boolean makeMove(final int row, final int column, final Color color, boolean simuMode)
-  {
+  public boolean makeMove(final int row, final int column, final Color color, boolean simuMode) {
     cellsToFlip.clear();
     cellsChanged.clear();
     // Check if the move is out-of-bounds or the cell is already occupied.
@@ -90,8 +84,8 @@ public class Board
     // Define all 8 possible directions.
     int[][] directions = {
         {-1, -1}, {-1, 0}, {-1, 1},
-        { 0, -1},          { 0, 1},
-        { 1, -1}, { 1, 0}, { 1, 1}
+        {0, -1}, {0, 1},
+        {1, -1}, {1, 0}, {1, 1}
     };
 
     // For each direction, calculate flips if the immediate neighbor is an opponent.
@@ -141,10 +135,10 @@ public class Board
   }
 
   /**
-   *  Returns the list of opponent pieces that would be flipped in the given direction,
+   * Returns the list of opponent pieces that would be flipped in the given direction,
    * starting from (row, col). If the direction does not end with a piece of the same color,
    * an empty list is returned.
- */
+   */
   private List<Piece> getFlipsInDirection(int row, int col, int deltaRow, int deltaCol, Color color) {
     List<Piece> flips = new ArrayList<>();
     int r = row + deltaRow;
@@ -188,15 +182,13 @@ public class Board
     }
   }
 
-  public HashSet<Cell> getCellsToHighLight(Color color)
-  {
+  public HashSet<Cell> getCellsToHighLight(Color color) {
     cellsToHighlight.clear();
     highlightPossibleMoves(color);
     return cellsToHighlight;
   }
 
-  public int getPieceCount(Color color)
-  {
+  public int getPieceCount(Color color) {
     if (color == Color.BLACK) {
       return blackCount;
     } else {
@@ -204,9 +196,7 @@ public class Board
     }
   }
 
-  private void updatePieceCount(Color color, int number)
-  {
-
+  private void updatePieceCount(Color color, int number) {
     if (color == Color.WHITE) {
       whiteCount += number;
     } else if (color == Color.BLACK) {
@@ -214,18 +204,15 @@ public class Board
     }
   }
 
-  public Color getOppositeColor(Color color)
-  {
+  public Color getOppositeColor(Color color) {
     return color.equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
   }
 
-  public HashSet<Piece> getCellsChanged()
-  {
+  public HashSet<Piece> getCellsChanged() {
     return cellsChanged;
   }
 
-  public void updatePositionStats(int row, int column, Color color)
-  {
+  public void updatePositionStats(int row, int column, Color color) {
     PositionStats stats = positionStats.get(color);
     stats.update(row, column);
   }
