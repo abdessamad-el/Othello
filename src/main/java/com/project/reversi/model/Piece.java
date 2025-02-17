@@ -1,4 +1,6 @@
-package com.project.reversi;
+package com.project.reversi.model;
+
+import com.project.reversi.model.Cell;
 
 import java.awt.*;
 
@@ -15,6 +17,11 @@ public class Piece extends Cell {
   @Override
   public void printCell() {
     System.out.print(color.equals(Color.WHITE) ? "W" : "B");
+  }
+
+
+  public String toString() {
+    return color.equals(Color.WHITE) ? "W" : "B";
   }
 
   public void flip() {

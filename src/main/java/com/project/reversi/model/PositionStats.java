@@ -1,4 +1,4 @@
-package com.project.reversi;
+package com.project.reversi.model;
 
 public class PositionStats {
   private int rowMin;

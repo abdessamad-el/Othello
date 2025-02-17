@@ -1,4 +1,4 @@
-package com.project.reversi;
+package com.project.reversi.model;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -215,5 +215,30 @@ public class Board {
   public void updatePositionStats(int row, int column, Color color) {
     PositionStats stats = positionStats.get(color);
     stats.update(row, column);
+  }
+
+  public int getNumRows() {
+    return numRows;
+  }
+
+  public int getNumColumns() {
+    return numColumns;
+  }
+
+  public Cell getCell(int row, int column) {
+    return cells[row][column];
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < numRows; i++) {
+      for (int j = 0; j < numColumns; j++) {
+        sb.append(cells[i][j].toString());
+        sb.append(",");
+      }
+      sb.append("\n");
+    }
+    return sb.toString();
   }
 }
