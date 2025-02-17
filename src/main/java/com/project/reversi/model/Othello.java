@@ -1,4 +1,4 @@
-package com.project.reversi;
+package com.project.reversi.model;
 
 
 import javax.swing.*;

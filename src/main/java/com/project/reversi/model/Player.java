@@ -1,5 +1,7 @@
 
-package com.project.reversi;
+package com.project.reversi.model;
+
+import com.project.reversi.model.Othello;
 
 import java.awt.*;
 
