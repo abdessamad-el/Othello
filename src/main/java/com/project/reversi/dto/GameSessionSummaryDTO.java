@@ -14,6 +14,9 @@ public class GameSessionSummaryDTO {
   private String currentPlayerColor;
   private boolean finished;
   private String gameType;
+  private int whiteScore;
+  private int blackScore;
+  private String gameState;
 
   // Getters and setters
 
@@ -65,6 +68,30 @@ public class GameSessionSummaryDTO {
     this.gameType = gameType;
   }
 
+  public int getBlackScore() {
+    return blackScore;
+  }
+
+  public int getWhiteScore() {
+    return whiteScore;
+  }
+
+  public String getGameState() {
+    return gameState;
+  }
+
+  public void setBlackScore(int pieceCount) {
+    blackScore = pieceCount;
+  }
+
+  public void setWhiteScore(int pieceCount) {
+    whiteScore = pieceCount;
+  }
+
+  public void setGameState(String name) {
+    gameState = name;
+  }
+
   public static GameSessionSummaryDTO fromGameSession(GameSession session) {
     GameSessionSummaryDTO summary = new GameSessionSummaryDTO();
     summary.setSessionId(session.getSessionId());
@@ -84,6 +111,9 @@ public class GameSessionSummaryDTO {
                                                           : "White" : "N/A");
     summary.setFinished(session.isFinished());
     summary.setGameType(session.getGameType().name());
+    summary.setGameState(session.getGameState().name());
+    summary.setWhiteScore(session.getWhiteScore());
+    summary.setBlackScore(session.getBlackScore());
     return summary;
   }
 }
