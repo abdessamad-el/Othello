@@ -241,4 +241,23 @@ public class Board {
     }
     return sb.toString();
   }
+
+
+  public boolean hasValidMove(Color color) {
+    for (int i = 0; i < numRows; i++) {
+      for (int j = 0; j < numColumns; j++) {
+        // Use simulation mode (e.g., makeMove with simuMode=true) to check if the move would be valid
+        if (this.makeMove(i, j, color, true)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean isGameOver() {
+    return !hasValidMove(Color.WHITE) && !hasValidMove(Color.BLACK);
+  }
+
+
 }

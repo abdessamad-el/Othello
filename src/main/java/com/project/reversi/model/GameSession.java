@@ -15,6 +15,9 @@ public class GameSession {
   private LocalDateTime createdAt;// Timestamp of session creation
   private boolean finished;       // Whether the session is finished
   private int currentTurnIndex;   // Index (0 or 1) for current player's turn
+  private GameState gameState;    // The state of the game
+  private int whiteScore;         // piece count for white
+  private int blackScore;         // piece count for black
 
   /**
    * Creates a new game session.
@@ -41,6 +44,9 @@ public class GameSession {
       // For player vs. player, add a placeholder for Player 2.
       this.players.add(null);
     }
+    this.gameState = GameState.IN_PROGRESS;
+    this.whiteScore = board.getPieceCount(Color.WHITE);
+    this.blackScore = board.getPieceCount(Color.BLACK);
   }
 
   public String getSessionId() {
@@ -86,6 +92,30 @@ public class GameSession {
   // Returns the player whose turn it is.
   public Player getCurrentPlayer() {
     return players.get(currentTurnIndex);
+  }
+
+  public GameState getGameState() {
+    return gameState;
+  }
+
+  public void setGameState(GameState gameResult) {
+    this.gameState = gameResult;
+  }
+
+  public int getWhiteScore() {
+    return whiteScore;
+  }
+
+  public void setWhiteScore(int whiteScore) {
+    this.whiteScore = whiteScore;
+  }
+
+  public int getBlackScore() {
+    return blackScore;
+  }
+
+  public void setBlackScore(int blackScore) {
+    this.blackScore = blackScore;
   }
 
   // Advances the turn (for two players, cycles between 0 and 1).
