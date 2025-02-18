@@ -2,7 +2,7 @@ package com.project.reversi.dto;
 
 public class MoveResponseDTO {
   private String message;
-  private BoardDTO board;
+  private GameSessionSummaryDTO sessionSummary;
 
   // Getters and setters
   public String getMessage() {
@@ -13,12 +13,12 @@ public class MoveResponseDTO {
     this.message = message;
   }
 
-  public BoardDTO getBoard() {
-    return board;
+  public GameSessionSummaryDTO getSessionSummary() {
+    return sessionSummary;
   }
 
-  public void setBoard(BoardDTO board) {
-    this.board = board;
+  public void setSessionSummary(GameSessionSummaryDTO sessionSummary) {
+    this.sessionSummary = sessionSummary;
   }
 }
 
