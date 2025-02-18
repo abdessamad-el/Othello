@@ -3,9 +3,13 @@ package com.project.reversi.controllers;
 import com.project.reversi.dto.BoardDTO;
 import com.project.reversi.dto.MoveRequestDTO;
 import com.project.reversi.dto.MoveResponseDTO;
+import com.project.reversi.dto.GameSessionSummaryDTO;
+import com.project.reversi.model.GameSession;
 import com.project.reversi.services.GameService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.awt.Color;
 
 @RestController
 @RequestMapping("/api/game")
@@ -17,24 +21,42 @@ public class GameController {
     this.gameService = gameService;
   }
 
-  // Endpoint to retrieve the current board state.
+
   @GetMapping("/board")
-  public BoardDTO getBoard() {
-    return BoardDTO.fromBoard(gameService.getBoard());
+  public ResponseEntity<BoardDTO> getBoard(@RequestParam String sessionId) {
+    GameSession session = gameService.getSessionById(sessionId);
+    if (session == null) {
+      return ResponseEntity.notFound().build();
+    }
+    GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(session);
+    return ResponseEntity.ok(summary.getBoard());
   }
 
-  // Endpoint to make a move.
   @PostMapping("/move")
   public ResponseEntity<MoveResponseDTO> makeMove(@RequestBody MoveRequestDTO moveRequest) {
-    boolean valid = gameService.makeMove(moveRequest.getRow(), moveRequest.getColumn(), moveRequest.getColor());
     MoveResponseDTO response = new MoveResponseDTO();
-    if (valid) {
-      response.setMessage("Move successful");
-    } else {
-      response.setMessage("Invalid move");
+    Color playerColor = "WHITE".equalsIgnoreCase(moveRequest.getColor()) ? Color.WHITE : Color.BLACK;
+    try {
+      boolean moveResult = gameService.makeMove(
+          moveRequest.getSessionId(),
+          moveRequest.getRow(),
+          moveRequest.getColumn(),
+          playerColor
+      );
+      if (moveResult) {
+        response.setMessage("Move successful");
+      } else {
+        response.setMessage("Invalid move");
+      }
+      GameSession updatedSession = gameService.getSessionById(moveRequest.getSessionId());
+      GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(updatedSession);
+      response.setSessionSummary(summary);
+      return ResponseEntity.ok(response);
     }
-    response.setBoard(BoardDTO.fromBoard(gameService.getBoard()));
-    return ResponseEntity.ok(response);
+    catch (IllegalArgumentException e) {
+      response.setMessage("Error: " + e.getMessage());
+      return ResponseEntity.badRequest().body(response);
+    }
   }
-}
 
+}
