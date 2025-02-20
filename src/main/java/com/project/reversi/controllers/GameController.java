@@ -1,6 +1,7 @@
 package com.project.reversi.controllers;
 
 import com.project.reversi.dto.BoardDTO;
+import com.project.reversi.dto.MoveDTO;
 import com.project.reversi.dto.MoveRequestDTO;
 import com.project.reversi.dto.MoveResponseDTO;
 import com.project.reversi.dto.GameSessionSummaryDTO;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.awt.Color;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/game")
@@ -36,6 +39,25 @@ public class GameController {
     return ResponseEntity.ok(summary.getBoard());
   }
 
+
+  @PostMapping("/possible-moves")
+  public ResponseEntity<List<MoveDTO>> getPossibleMoves(@RequestBody MoveRequestDTO moveRequest) {
+    // Validate session
+    GameSession session = gameService.getSessionById(moveRequest.getSessionId());
+    if (session == null) {
+      return ResponseEntity.badRequest().build();
+    }
+    Color playerColor = "WHITE".equalsIgnoreCase(moveRequest.getColor()) ? Color.WHITE : Color.BLACK;
+    List<MoveDTO> validMoves = session.getBoard()
+                                      .ComputeValidMoves(playerColor)
+                                      .stream()
+                                      .map(move -> new MoveDTO(move[0], move[1]))
+                                      .collect(
+                                          Collectors.toList());
+    return ResponseEntity.ok(validMoves);
+  }
+
+
   /**
    * Processes a move within a game session.
    * Expects a JSON payload with sessionId, row, column, and color.
@@ -50,7 +72,8 @@ public class GameController {
           moveRequest.getSessionId(),
           moveRequest.getRow(),
           moveRequest.getColumn(),
-          playerColor
+          playerColor,
+          moveRequest.getPass()
       );
       switch (result) {
         case SUCCESS:

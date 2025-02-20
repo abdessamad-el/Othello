@@ -33,7 +33,7 @@ public class GameService {
    * @param playerColor The color of the player making the move.
    * @return The resut of the move
    */
-  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor) {
+  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor, boolean passFlag) {
     GameSession session = sessionRepository.findById(sessionId);
     if (session == null) {
       logger.error("Session not found: {}", sessionId);
@@ -75,15 +75,15 @@ public class GameService {
         return MoveResult.GAME_FINISHED;
       }
     }
+    // If the pass flag is true, we don't expect a coordinate-based move.
+    if (Boolean.TRUE.equals(passFlag)) {
+      //If valid moves exist (even though pass was requested), that's an error.
+      logger.error("Pass requested but valid moves exist for player {}", playerColor);
+      return MoveResult.INVALID_PASS;
+    }
     // Attempt the move on the board
     boolean moveResult = session.getBoard().makeMove(row, column, playerColor, false);
     if (moveResult) {
-      logger.info(
-          "Move made at ({}, {}) by player {}",
-          row,
-          column,
-          playerColor.equals(Color.WHITE) ? "White" : "Black"
-      );
       session.advanceTurn();
       updateScore(session);
       sessionRepository.save(session);
@@ -92,6 +92,10 @@ public class GameService {
       if (session.getGameType() == GameType.PLAYER_VS_COMPUTER &&
           session.getCurrentPlayer().isComputer()) {
         performComputerMove(session);
+      }
+      // check if the game is finished and finalize the session
+      if (session.getBoard().isGameOver()) {
+        finalizeGame(session);
       }
       return MoveResult.SUCCESS;
 
@@ -137,14 +141,11 @@ public class GameService {
       }
     }
 
-    // If a move was made, advance the turn and save the session.
-    if (moveMade) {
-      session.advanceTurn();
-      // update score
-      updateScore(session);
-      sessionRepository.save(session);
-    }
-
+    // advance the turn and save the session.
+    session.advanceTurn();
+    // update score
+    updateScore(session);
+    sessionRepository.save(session);
   }
 
   /**

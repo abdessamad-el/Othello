@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Othello</title>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<h1>Othello</h1>
+
+<!-- MENU PAGE (initially visible) -->
+<div id="menuPage">
+    <button id="newGameBtn">New Game</button>
+    <button id="joinGameBtn">Join Game</button>
+</div>
+
+<!-- GAME PAGE (hidden until a session is active) -->
+<div id="gamePage" class="hidden">
+    <!-- In-game top bar: Menu and Quit buttons -->
+    <div id="inGameTopBar">
+        <button onclick="menuRedirect()">Menu</button>
+        <button onclick="quitGame()">Quit Game</button>
+    </div>
+    <!-- Game container wrapping scoreboard and board -->
+    <div id="gameContainer">
+        <!-- Scoreboard -->
+        <div id="scores">
+            <div id="blackScoreBox" class="scoreBox">
+                <div class="circle blackCircle"></div>
+                <span id="blackScoreVal">0</span>
+            </div>
+            <div id="whiteScoreBox" class="scoreBox">
+                <span id="whiteScoreVal">0</span>
+                <div class="circle whiteCircle"></div>
+            </div>
+        </div>
+        <!-- Board container -->
+        <div id="board"></div>
+    </div>
+</div>
+
+<!-- Overlay for new game / join forms -->
+<div id="overlay" class="hidden">
+    <div id="overlayContent">
+        <h2 id="overlayTitle"></h2>
+        <div id="overlayBody"></div>
+    </div>
+</div>
+
+<!-- Link to the external JavaScript file -->
+<script src="script.js"></script>
+</body>
+</html>

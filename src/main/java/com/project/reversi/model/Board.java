@@ -255,6 +255,18 @@ public class Board {
     return false;
   }
 
+  public List<int[]> ComputeValidMoves(Color color) {
+    List<int[]> validMoves = new ArrayList<>();
+    for (int row = 0; row < numRows; row++) {
+      for (int col = 0; col < numColumns; col++) {
+        if (!isOutOfBounds(row, col) && makeMove(row, col, color, true)) {
+          validMoves.add(new int[]{row, col});
+        }
+      }
+    }
+    return validMoves;
+  }
+
   public boolean isGameOver() {
     return !hasValidMove(Color.WHITE) && !hasValidMove(Color.BLACK);
   }

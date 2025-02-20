@@ -6,5 +6,6 @@ public enum MoveResult {
   NO_MOVES_AVAILABLE,
   COMPUTER_MOVED,
   GAME_FINISHED,
+  INVALID_PASS,
   WRONG_TURN
 }

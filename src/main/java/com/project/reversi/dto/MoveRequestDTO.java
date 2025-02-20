@@ -5,6 +5,16 @@ public class MoveRequestDTO {
   private int column;
   private String color; // Expected values: "WHITE" or "BLACK"
   private String sessionId;
+  private Boolean pass; // field for passing the turn
+
+
+  public Boolean getPass() {
+    return pass;
+  }
+
+  public void setPass(Boolean pass) {
+    this.pass = pass;
+  }
 
   public int getRow() {
     return row;
