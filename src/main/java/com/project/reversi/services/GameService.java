@@ -43,6 +43,13 @@ public class GameService {
       logger.warn("Attempted move on finished session: {}", sessionId);
       return MoveResult.GAME_FINISHED;
     }
+
+    if (session.getBoard().isGameOver()) {
+      // Neither player can move; the game is over.
+      logger.info("No valid moves for either player in session {}. Game is finished.", sessionId);
+      finalizeGame(session);
+      return MoveResult.GAME_FINISHED;
+    }
     // Ensure it's the correct player's turn.
     Player currentPlayer = session.getCurrentPlayer();
     if (!currentPlayer.getColor().equals(playerColor)) {
@@ -55,25 +62,14 @@ public class GameService {
     }
     // Check if the current player has any valid moves.
     if (!session.getBoard().hasValidMove(playerColor)) {
-      // Check if the opponent has any valid moves.
-      Color otherPlayerColor = session.getBoard().getOppositeColor(playerColor);
-      if (session.getBoard().hasValidMove(otherPlayerColor)) {
-        logger.info("Player {} has no valid moves; passing turn.", playerColor);
-        session.advanceTurn();
-        sessionRepository.save(session);
-        // In PLAYER_VS_COMPUTER mode, if it is now the computer's turn, perform the computer move.
-        if (session.getGameType() == GameType.PLAYER_VS_COMPUTER &&
-            session.getCurrentPlayer().isComputer()) {
-          performComputerMove(session);
-          return MoveResult.COMPUTER_MOVED;
-        }
-        return MoveResult.NO_MOVES_AVAILABLE;
-      } else {
-        // Neither player can move; the game is over.
-        logger.info("No valid moves for either player in session {}. Game is finished.", sessionId);
-        finalizeGame(session);
-        return MoveResult.GAME_FINISHED;
+      logger.info("Player {} has no valid moves; passing turn.", playerColor);
+      session.advanceTurn();
+      while (session.getGameType() == GameType.PLAYER_VS_COMPUTER && !currentPlayer.getColor().equals(playerColor)) {
+        // wait for the computer to finish his turn before saving the session
       }
+      updateScore(session);
+      sessionRepository.save(session);
+      return MoveResult.PASS;
     }
     // If the pass flag is true, we don't expect a coordinate-based move.
     if (Boolean.TRUE.equals(passFlag)) {
@@ -84,15 +80,13 @@ public class GameService {
     // Attempt the move on the board
     boolean moveResult = session.getBoard().makeMove(row, column, playerColor, false);
     if (moveResult) {
+      logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
+      while (session.getGameType() == GameType.PLAYER_VS_COMPUTER && !currentPlayer.getColor().equals(playerColor)) {
+        // wait for the computer to finish his turn before saving the session
+      }
       updateScore(session);
       sessionRepository.save(session);
-      // Only perform the computer move if the game type is PLAYER_VS_COMPUTER
-      // and if it's now the computer's turn.
-      if (session.getGameType() == GameType.PLAYER_VS_COMPUTER &&
-          session.getCurrentPlayer().isComputer()) {
-        performComputerMove(session);
-      }
       // check if the game is finished and finalize the session
       if (session.getBoard().isGameOver()) {
         finalizeGame(session);
@@ -117,35 +111,6 @@ public class GameService {
 
   public GameSession getSessionById(String sessionId) {
     return sessionRepository.findById(sessionId);
-  }
-
-  private void performComputerMove(GameSession session) {
-    Color computerColor = session.getCurrentPlayer().getColor();
-
-    // Check if the computer has any valid moves.
-    if (!session.getBoard().hasValidMove(computerColor)) {
-      logger.info("Computer has no valid moves; passing turn.");
-      session.advanceTurn();
-      sessionRepository.save(session);
-      return;
-    }
-
-    // Otherwise, attempt to find a valid move.
-    boolean moveMade = false;
-    for (int i = 0; i < session.getBoard().getNumRows() && !moveMade; i++) {
-      for (int j = 0; j < session.getBoard().getNumColumns() && !moveMade; j++) {
-        if (session.getBoard().makeMove(i, j, computerColor, false)) {
-          logger.info("Computer moved at ({}, {})", i, j);
-          moveMade = true;
-        }
-      }
-    }
-
-    // advance the turn and save the session.
-    session.advanceTurn();
-    // update score
-    updateScore(session);
-    sessionRepository.save(session);
   }
 
   /**

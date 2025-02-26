@@ -18,6 +18,7 @@ public class GameSession {
   private GameState gameState;    // The state of the game
   private int whiteScore;         // piece count for white
   private int blackScore;         // piece count for black
+  private final List<Runnable> procedures = new ArrayList<>();
 
   /**
    * Creates a new game session.
@@ -38,7 +39,7 @@ public class GameSession {
     if (gameType == GameType.PLAYER_VS_COMPUTER) {
       // Automatically create a computer player with the opposite color.
       Color computerColor = creator.getColor().equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
-      Player computerPlayer = new Player(computerColor, true);
+      Player computerPlayer = new Player(computerColor, true,this);
       this.players.add(computerPlayer);
     } else {
       // For player vs. player, add a placeholder for Player 2.
@@ -121,6 +122,12 @@ public class GameSession {
   // Advances the turn (for two players, cycles between 0 and 1).
   public void advanceTurn() {
     currentTurnIndex = (currentTurnIndex + 1) % 2;
+    if (currentTurnIndex % 2 == 1 && gameType == GameType.PLAYER_VS_COMPUTER){
+      // notify the computer to play if it's turn
+      for (Runnable procedure : procedures) {
+        procedure.run();
+      }
+    }
   }
 
   /**
@@ -156,5 +163,9 @@ public class GameSession {
            ", finished=" + finished +
            ", currentTurnIndex=" + currentTurnIndex +
            '}';
+  }
+
+  public List<Runnable> OnChanged() {
+    return procedures;
   }
 }
