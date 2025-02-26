@@ -12,13 +12,13 @@ This project is a web-based implementation of the classic board game **Othello (
 - **Game Setup:** Create or join a game session using the provided menu.
 - **Valid Moves Highlighting:** The frontend calls a backend endpoint to fetch and highlight valid moves.
 - **Turn Management:** The backend automatically passes the turn when no valid moves exist.
-- **Polling & State Updates:** The frontend can poll for updated game state (optional for multiplayer scenarios).
-- **Extensible Design:** Built to easily support future enhancements such as full multiplayer support.
+- **Websockets & State Updates:** The server and client communicate via Websockets for updated game state for multiplayer scenarios.
+- **Extensible Design:** Built to easily support future enhancements.
 
 ## Technologies
 
-- **Backend:** Spring Boot, Java
-- **Frontend:** HTML, CSS, and vanilla JavaScript (using Fetch API)
+- **Backend:** Spring Boot, Java , Websockets
+- **Frontend:** HTML, CSS, and vanilla JavaScript
 - **Build Tool:** Maven
 
 ## Getting Started
