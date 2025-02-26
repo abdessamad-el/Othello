@@ -255,7 +255,7 @@ public class Board {
     return false;
   }
 
-  public List<int[]> ComputeValidMoves(Color color) {
+  public synchronized List<int[]> ComputeValidMoves(Color color) {
     List<int[]> validMoves = new ArrayList<>();
     for (int row = 0; row < numRows; row++) {
       for (int col = 0; col < numColumns; col++) {
@@ -268,7 +268,7 @@ public class Board {
   }
 
   public boolean isGameOver() {
-    return !hasValidMove(Color.WHITE) && !hasValidMove(Color.BLACK);
+    return whiteCount + blackCount == 64 || (!hasValidMove(Color.WHITE) && !hasValidMove(Color.BLACK));
   }
 
 

@@ -10,7 +10,9 @@ import com.project.reversi.model.MoveResult;
 import com.project.reversi.services.GameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.awt.Color;
@@ -23,6 +25,9 @@ public class GameController {
 
   private final GameService gameService;
   private static final Logger logger = LoggerFactory.getLogger(GameController.class);
+
+  @Autowired
+  private SimpMessagingTemplate simpMessagingTemplate;
 
   public GameController(GameService gameService) {
     this.gameService = gameService;
@@ -95,6 +100,7 @@ public class GameController {
       GameSession updatedSession = gameService.getSessionById(moveRequest.getSessionId());
       GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(updatedSession);
       response.setSessionSummary(summary);
+      simpMessagingTemplate.convertAndSend("/topic/game-progress/" + response.getSessionSummary().getSessionId(), response);
       return ResponseEntity.ok(response);
     }
     catch (IllegalArgumentException e) {

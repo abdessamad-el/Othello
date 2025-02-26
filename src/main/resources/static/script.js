@@ -66,7 +66,8 @@ document.addEventListener("DOMContentLoaded", function() {
       .then(res => res.json())
       .then(data => {
       console.log("New Game:", data);
-      clientColor = "WHITE"
+      clientColor = "WHITE";
+      connectToSocket(data.sessionId);
       enterGame(data);
     })
       .catch(err => console.error("Error creating game:", err));
@@ -85,7 +86,8 @@ document.addEventListener("DOMContentLoaded", function() {
       .then(res => res.json())
       .then(data => {
       console.log("Joined Game:", data);
-      clientColor = "BLACK"
+      clientColor = "BLACK";
+      connectToSocket(data.sessionId);
       enterGame(data);
     })
       .catch(err => console.error("Error joining game:", err));
@@ -160,13 +162,6 @@ document.addEventListener("DOMContentLoaded", function() {
       console.log("Valid moves:", validMoves);
       if (validMoves.length === 0) {
         passTurn(sessionSummary.sessionId, sessionSummary.currentPlayerColor)
-          .then(updatedSession => {
-          // Re-render game with updated session and restart polling.
-          renderGame(updatedSession);
-        })
-          .catch(err => {
-          console.error("Error passing turn:", err);
-        });
       } else {
         // Valid moves exist, so render the board with highlights.
         renderBoard(sessionSummary.board.boardCells, validMoves);
@@ -273,9 +268,6 @@ document.addEventListener("DOMContentLoaded", function() {
     })
       .then(data => {
       console.log("Move response:", data);
-      // Update the current session with the latest data and re-render the game
-      currentSessionSummary = data.sessionSummary;
-      renderGame(data.sessionSummary);
     })
       .catch(error => {
       console.error("Error making move:", error);
@@ -326,13 +318,26 @@ document.addEventListener("DOMContentLoaded", function() {
     })
       .then(data => {
       console.log("Turn passed. Updated session:", data);
-      currentSessionSummary = data.sessionSummary;
-      return data.sessionSummary;
     })
       .catch(error => {
       console.error("Error passing turn:", error);
       throw error;
     });
+  }
+
+  function connectToSocket(gameId) {
+    console.log("connecting to the game");
+    let socket = new SockJS('http://localhost:8080' + "/move");
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (frame) {
+      console.log("connected to the frame: " + frame);
+      stompClient.subscribe("/topic/game-progress/" + gameId, function (response) {
+        let data = JSON.parse(response.body);
+        console.log(data);
+        currentSessionSummary = data.sessionSummary;
+        renderGame(currentSessionSummary);
+      })
+    })
   }
 
 
