@@ -156,17 +156,26 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
 
-    // Fetch valid moves.
+    // Only fetch possible moves if it's this client's turn
+    const isMyTurn = sessionSummary.currentPlayerColor && clientColor &&
+      sessionSummary.currentPlayerColor.toUpperCase() === clientColor.toUpperCase();
+    if (!isMyTurn) {
+      renderBoard(sessionSummary.board.boardCells, []);
+      return;
+    }
+
+    // Fetch valid moves for the current player (this client)
     fetchPossibleMoves(sessionSummary.sessionId, sessionSummary.currentPlayerColor)
       .then(validMoves => {
-      console.log("Valid moves:", validMoves);
-      if (validMoves.length === 0) {
+        console.log("Valid moves:", validMoves);
+        if (validMoves.length === 0) {
+        // Auto-pass only if it's our turn and no moves are available
         passTurn(sessionSummary.sessionId, sessionSummary.currentPlayerColor)
-      } else {
-        // Valid moves exist, so render the board with highlights.
-        renderBoard(sessionSummary.board.boardCells, validMoves);
-      }
-    })
+        } else {
+          // Valid moves exist, so render the board with highlights.
+          renderBoard(sessionSummary.board.boardCells, validMoves);
+        }
+      })
       .catch(err => {
       console.error("Error fetching possible moves:", err);
       renderBoard(sessionSummary.board.boardCells, []);

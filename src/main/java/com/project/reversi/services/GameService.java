@@ -69,7 +69,7 @@ public class GameService {
       return MoveResult.PASS;
     }
     // If the pass flag is true, we don't expect a coordinate-based move.
-    if (Boolean.TRUE.equals(passFlag)) {
+    if (passFlag) {
       //If valid moves exist (even though pass was requested), that's an error.
       logger.error("Pass requested but valid moves exist for player {}", playerColor);
       return MoveResult.INVALID_PASS;
@@ -84,6 +84,7 @@ public class GameService {
       // check if the game is finished and finalize the session
       if (session.getBoard().isGameOver()) {
         finalizeGame(session);
+        return MoveResult.GAME_FINISHED;
       }
       return MoveResult.SUCCESS;
 
