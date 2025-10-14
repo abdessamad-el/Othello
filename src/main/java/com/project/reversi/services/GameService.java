@@ -64,9 +64,6 @@ public class GameService {
     if (!session.getBoard().hasValidMove(playerColor)) {
       logger.info("Player {} has no valid moves; passing turn.", playerColor);
       session.advanceTurn();
-      while (session.getGameType() == GameType.PLAYER_VS_COMPUTER && !currentPlayer.getColor().equals(playerColor)) {
-        // wait for the computer to finish his turn before saving the session
-      }
       updateScore(session);
       sessionRepository.save(session);
       return MoveResult.PASS;
@@ -82,9 +79,6 @@ public class GameService {
     if (moveResult) {
       logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
-      while (session.getGameType() == GameType.PLAYER_VS_COMPUTER && !currentPlayer.getColor().equals(playerColor)) {
-        // wait for the computer to finish his turn before saving the session
-      }
       updateScore(session);
       sessionRepository.save(session);
       // check if the game is finished and finalize the session

@@ -18,7 +18,7 @@ public class GameSession {
   private GameState gameState;    // The state of the game
   private int whiteScore;         // piece count for white
   private int blackScore;         // piece count for black
-  private final List<Runnable> procedures = new ArrayList<>();
+  private final List<Runnable> onTurnChangedListeners = new ArrayList<>();
 
   /**
    * Creates a new game session.
@@ -124,7 +124,7 @@ public class GameSession {
     currentTurnIndex = (currentTurnIndex + 1) % 2;
     if (currentTurnIndex % 2 == 1 && gameType == GameType.PLAYER_VS_COMPUTER){
       // notify the computer to play if it's turn
-      for (Runnable procedure : procedures) {
+      for (Runnable procedure : onTurnChangedListeners) {
         procedure.run();
       }
     }
@@ -165,7 +165,13 @@ public class GameSession {
            '}';
   }
 
-  public List<Runnable> OnChanged() {
-    return procedures;
+  public void addOnTurnChangedListener(Runnable listener) {
+    if (listener != null) {
+      onTurnChangedListeners.add(listener);
+    }
+  }
+
+  public void removeOnTurnChangedListener(Runnable listener) {
+    onTurnChangedListeners.remove(listener);
   }
 }

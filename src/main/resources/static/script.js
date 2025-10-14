@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function connectToSocket(gameId) {
     console.log("connecting to the game");
-    let socket = new SockJS('http://localhost:8080' + "/move");
+    let socket = new SockJS('/move');
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
       console.log("connected to the frame: " + frame);

@@ -101,14 +101,14 @@ public class GameSessionSummaryDTO {
     // Map players to their color strings. If a player is null, use "N/A".
     summary.setPlayerColors(
         session.getPlayers().stream()
-               .map(player -> player == null ? "N/A" : player.getColor().equals(Color.BLACK) ? "Black" : "White")
+               .map(player -> player == null ? "N/A" : player.getColor().equals(Color.BLACK) ? "BLACK" : "WHITE")
                .collect(Collectors.toList())
     );
 
     Player currentPlayer = session.getCurrentPlayer();
     summary.setCurrentPlayerColor(currentPlayer != null ? currentPlayer.getColor().equals(Color.BLACK)
-                                                          ? "Black"
-                                                          : "White" : "N/A");
+                                                          ? "BLACK"
+                                                          : "WHITE" : "N/A");
     summary.setFinished(session.isFinished());
     summary.setGameType(session.getGameType().name());
     summary.setGameState(session.getGameState().name());
