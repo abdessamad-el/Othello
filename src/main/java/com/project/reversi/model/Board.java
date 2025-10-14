@@ -182,7 +182,7 @@ public class Board {
     }
   }
 
-  public HashSet<Cell> getCellsToHighLight(Color color) {
+  public HashSet<Cell> getCellsToHighlight(Color color) {
     cellsToHighlight.clear();
     highlightPossibleMoves(color);
     return cellsToHighlight;
@@ -255,7 +255,7 @@ public class Board {
     return false;
   }
 
-  public synchronized List<int[]> ComputeValidMoves(Color color) {
+  public List<int[]> computeValidMoves(Color color) {
     List<int[]> validMoves = new ArrayList<>();
     for (int row = 0; row < numRows; row++) {
       for (int col = 0; col < numColumns; col++) {

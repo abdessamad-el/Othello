@@ -64,15 +64,12 @@ public class GameService {
     if (!session.getBoard().hasValidMove(playerColor)) {
       logger.info("Player {} has no valid moves; passing turn.", playerColor);
       session.advanceTurn();
-      while (session.getGameType() == GameType.PLAYER_VS_COMPUTER && !currentPlayer.getColor().equals(playerColor)) {
-        // wait for the computer to finish his turn before saving the session
-      }
       updateScore(session);
       sessionRepository.save(session);
       return MoveResult.PASS;
     }
     // If the pass flag is true, we don't expect a coordinate-based move.
-    if (Boolean.TRUE.equals(passFlag)) {
+    if (passFlag) {
       //If valid moves exist (even though pass was requested), that's an error.
       logger.error("Pass requested but valid moves exist for player {}", playerColor);
       return MoveResult.INVALID_PASS;
@@ -82,14 +79,12 @@ public class GameService {
     if (moveResult) {
       logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
-      while (session.getGameType() == GameType.PLAYER_VS_COMPUTER && !currentPlayer.getColor().equals(playerColor)) {
-        // wait for the computer to finish his turn before saving the session
-      }
       updateScore(session);
       sessionRepository.save(session);
       // check if the game is finished and finalize the session
       if (session.getBoard().isGameOver()) {
         finalizeGame(session);
+        return MoveResult.GAME_FINISHED;
       }
       return MoveResult.SUCCESS;
 

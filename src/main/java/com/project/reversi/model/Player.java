@@ -27,7 +27,7 @@ public class Player {
     this(color, computer);
     this.game = session;
     if (isComputer()) {
-      session.OnChanged().add(this::performComputerMove);
+      session.addOnTurnChangedListener(this::performComputerMove);
     }
   }
 

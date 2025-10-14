@@ -54,7 +54,7 @@ public class GameController {
     }
     Color playerColor = "WHITE".equalsIgnoreCase(moveRequest.getColor()) ? Color.WHITE : Color.BLACK;
     List<MoveDTO> validMoves = session.getBoard()
-                                      .ComputeValidMoves(playerColor)
+                                      .computeValidMoves(playerColor)
                                       .stream()
                                       .map(move -> new MoveDTO(move[0], move[1]))
                                       .collect(
@@ -86,6 +86,12 @@ public class GameController {
           break;
         case INVALID_MOVE:
           response.setMessage("Invalid move");
+          break;
+        case INVALID_PASS:
+          response.setMessage("Pass rejected: valid moves exist");
+          break;
+        case PASS:
+          response.setMessage("Turn passed");
           break;
         case NO_MOVES_AVAILABLE:
           response.setMessage("No valid moves available; turn passed");
