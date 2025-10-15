@@ -44,6 +44,9 @@ class GameSessionControllerTest {
         .andExpect(jsonPath("$.sessionId", notNullValue()))
         .andExpect(jsonPath("$.gameType", is("PLAYER_VS_PLAYER")))
         .andExpect(jsonPath("$.currentPlayerColor", is("WHITE")))
+        .andExpect(jsonPath("$.currentPlayerNickname", notNullValue()))
+        .andExpect(jsonPath("$.playerNicknames", notNullValue()))
+        .andExpect(jsonPath("$.playerNicknames[0]", notNullValue()))
         .andExpect(jsonPath("$.board.boardCells", notNullValue()));
   }
 
@@ -63,7 +66,8 @@ class GameSessionControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.sessionId", is(existing.getSessionId())))
         .andExpect(jsonPath("$.playerColors[0]", anyOf(is("WHITE"), is("BLACK"))))
-        .andExpect(jsonPath("$.playerColors[1]", anyOf(is("WHITE"), is("BLACK"))));
+        .andExpect(jsonPath("$.playerColors[1]", anyOf(is("WHITE"), is("BLACK"))))
+        .andExpect(jsonPath("$.playerNicknames", notNullValue()));
   }
 
   @Test

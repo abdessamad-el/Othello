@@ -11,7 +11,9 @@ public class GameSessionSummaryDTO {
   private String sessionId;
   private BoardDTO board;  // Use BoardDTO to represent the board state
   private List<String> playerColors; // e.g., "WHITE" or "BLACK" (or "N/A" if not present)
+  private List<String> playerNicknames;
   private String currentPlayerColor;
+  private String currentPlayerNickname;
   private boolean finished;
   private String gameType;
   private int whiteScore;
@@ -44,12 +46,28 @@ public class GameSessionSummaryDTO {
     this.playerColors = playerColors;
   }
 
+  public List<String> getPlayerNicknames() {
+    return playerNicknames;
+  }
+
+  public void setPlayerNicknames(List<String> playerNicknames) {
+    this.playerNicknames = playerNicknames;
+  }
+
   public String getCurrentPlayerColor() {
     return currentPlayerColor;
   }
 
   public void setCurrentPlayerColor(String currentPlayerColor) {
     this.currentPlayerColor = currentPlayerColor;
+  }
+
+  public String getCurrentPlayerNickname() {
+    return currentPlayerNickname;
+  }
+
+  public void setCurrentPlayerNickname(String currentPlayerNickname) {
+    this.currentPlayerNickname = currentPlayerNickname;
   }
 
   public boolean isFinished() {
@@ -105,10 +123,17 @@ public class GameSessionSummaryDTO {
                .collect(Collectors.toList())
     );
 
+    summary.setPlayerNicknames(
+        session.getPlayers().stream()
+               .map(GameSessionSummaryDTO::resolveNickname)
+               .collect(Collectors.toList())
+    );
+
     Player currentPlayer = session.getCurrentPlayer();
     summary.setCurrentPlayerColor(currentPlayer != null ? currentPlayer.getColor().equals(Color.BLACK)
                                                           ? "BLACK"
                                                           : "WHITE" : "N/A");
+    summary.setCurrentPlayerNickname(resolveNickname(currentPlayer));
     summary.setFinished(session.isFinished());
     summary.setGameType(session.getGameType().name());
     summary.setGameState(session.getGameState().name());
@@ -116,5 +141,18 @@ public class GameSessionSummaryDTO {
     summary.setBlackScore(session.getBlackScore());
     return summary;
   }
-}
 
+  private static String resolveNickname(Player player) {
+    if (player == null) {
+      return "Waiting...";
+    }
+    if (player.isComputer()) {
+      return "Computer";
+    }
+    String nickname = player.getNickName();
+    if (nickname != null && !nickname.isBlank()) {
+      return nickname;
+    }
+    return player.getColor().equals(Color.BLACK) ? "Black Player" : "White Player";
+  }
+}

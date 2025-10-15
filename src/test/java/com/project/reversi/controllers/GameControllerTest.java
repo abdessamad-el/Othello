@@ -96,7 +96,7 @@ class GameControllerTest {
             .content(objectMapper.writeValueAsString(req)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.message", is("Move successful")))
-        .andExpect(jsonPath("$.sessionSummary.sessionId", is(session.getSessionId())));
+        .andExpect(jsonPath("$.sessionSummary.sessionId", is(session.getSessionId())))
+        .andExpect(jsonPath("$.sessionSummary.playerNicknames", notNullValue()));
   }
 }
-
