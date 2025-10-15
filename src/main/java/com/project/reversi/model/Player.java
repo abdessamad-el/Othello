@@ -8,6 +8,7 @@ import java.awt.Color;
 public class Player {
   private Color color;
   private boolean computer;
+  private String nickName;
   private GameSession game;
 
 
@@ -16,11 +17,13 @@ public class Player {
   public Player(Color color) {
     this.color = color;
     this.computer = false;
+    this.nickName = null;
   }
 
   public Player(Color color, boolean computer) {
     this.color = color;
     this.computer = computer;
+    this.nickName = null;
   }
 
   public Player(Color color, boolean computer, GameSession session) {
@@ -29,6 +32,19 @@ public class Player {
     if (isComputer()) {
       session.addOnTurnChangedListener(this::performComputerMove);
     }
+  }
+
+  public Player(Color color, String nickName) {
+    this(color);
+    this.nickName = nickName;
+  }
+
+  public String getNickName() {
+    return nickName;
+  }
+
+  public void setNickName(String nickName) {
+    this.nickName = nickName;
   }
 
   public Color getColor() {

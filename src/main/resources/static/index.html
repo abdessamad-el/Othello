@@ -13,6 +13,7 @@
 <div id="menuPage">
     <button id="newGameBtn">New Game</button>
     <button id="joinGameBtn">Join Game</button>
+    <button id="findMatchBtn">Find Match</button>
 </div>
 
 <!-- GAME PAGE (hidden until a session is active) -->
@@ -21,6 +22,10 @@
     <div id="inGameTopBar">
         <button onclick="menuRedirect()">Menu</button>
         <button onclick="quitGame()">Quit Game</button>
+        <div id="sessionDetails" class="hidden">
+            <span id="sessionIdLabel">Session ID: -</span>
+            <button id="copySessionIdBtn" type="button">Copy</button>
+        </div>
     </div>
     <!-- Game container wrapping scoreboard and board -->
     <div id="gameContainer">
@@ -28,10 +33,16 @@
         <div id="scores">
             <div id="blackScoreBox" class="scoreBox">
                 <div class="circle blackCircle"></div>
-                <span id="blackScoreVal">0</span>
+                <div class="scoreDetails">
+                    <span id="blackPlayerName" class="playerName">Black Player</span>
+                    <span id="blackScoreVal" class="playerScore">0</span>
+                </div>
             </div>
             <div id="whiteScoreBox" class="scoreBox">
-                <span id="whiteScoreVal">0</span>
+                <div class="scoreDetails">
+                    <span id="whitePlayerName" class="playerName">White Player</span>
+                    <span id="whiteScoreVal" class="playerScore">0</span>
+                </div>
                 <div class="circle whiteCircle"></div>
             </div>
         </div>
