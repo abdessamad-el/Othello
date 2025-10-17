@@ -4,15 +4,15 @@ import com.project.reversi.model.Board;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.Player;
-import com.project.reversi.repository.GameSessionRepository;
+import com.project.reversi.repository.JpaGameSessionRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class GameSessionService {
 
-  private final GameSessionRepository sessionRepository;
+  private final JpaGameSessionRepository sessionRepository;
 
-  public GameSessionService(GameSessionRepository sessionRepository) {
+  public GameSessionService(JpaGameSessionRepository sessionRepository) {
     this.sessionRepository = sessionRepository;
   }
 
@@ -36,7 +36,7 @@ public class GameSessionService {
    * @return the GameSession, or null if not found
    */
   public GameSession getSessionById(String sessionId) {
-    return sessionRepository.findById(sessionId);
+    return sessionRepository.findById(sessionId).orElse(null);
   }
 
   /**
@@ -47,7 +47,7 @@ public class GameSessionService {
    * @return the updated GameSession
    */
   public GameSession joinGameSession(String sessionId, Player joiningPlayer) {
-    GameSession session = sessionRepository.findById(sessionId);
+    GameSession session = sessionRepository.findById(sessionId).orElse(null);
     if (session == null) {
       throw new IllegalArgumentException("Session not found");
     }

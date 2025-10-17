@@ -28,6 +28,76 @@ public class Board {
 
   }
 
+  public static Board fromSnapshot(List<List<String>> snapshot) {
+    if (snapshot == null || snapshot.isEmpty()) {
+      throw new IllegalArgumentException("Snapshot cannot be null or empty");
+    }
+    int rows = snapshot.size();
+    int cols = snapshot.get(0).size();
+    Board board = new Board(rows, cols);
+    board.loadState(snapshot);
+    return board;
+  }
+
+  public void loadState(List<List<String>> snapshot) {
+    if (snapshot.size() != numRows || snapshot.get(0).size() != numColumns) {
+      throw new IllegalArgumentException("Snapshot dimensions do not match board size");
+    }
+    cells = new Cell[numRows][numColumns];
+    blackCount = 0;
+    whiteCount = 0;
+    cellsToFlip.clear();
+    cellsChanged.clear();
+    cellsToHighlight.clear();
+
+    for (int i = 0; i < numRows; i++) {
+      for (int j = 0; j < numColumns; j++) {
+        String val = snapshot.get(i).get(j);
+        if ("B".equalsIgnoreCase(val)) {
+          cells[i][j] = new Piece(i, j, Color.BLACK);
+          blackCount++;
+        }
+        else if ("W".equalsIgnoreCase(val)) {
+          cells[i][j] = new Piece(i, j, Color.WHITE);
+          whiteCount++;
+        }
+        else {
+          cells[i][j] = new EmptyCell(i, j);
+        }
+      }
+    }
+    rebuildPositionStats();
+  }
+
+  private void rebuildPositionStats() {
+    positionStats = new HashMap<>();
+    computeStatsForColor(Color.WHITE);
+    computeStatsForColor(Color.BLACK);
+  }
+
+  private void computeStatsForColor(Color color) {
+    PositionStats stats = null;
+    for (int row = 0; row < numRows; row++) {
+      for (int col = 0; col < numColumns; col++) {
+        Cell cell = cells[row][col];
+        if (cell instanceof Piece) {
+          Piece piece = (Piece) cell;
+          if (piece.getColor().equals(color)) {
+            if (stats == null) {
+              stats = new PositionStats(row, row, col, col);
+            } else {
+              stats.update(row, col);
+            }
+          }
+        }
+      }
+    }
+    if (stats == null) {
+      stats = new PositionStats(0, 0, 0, 0);
+    }
+    positionStats.put(color, stats);
+  }
+
   private void initBoard() {
     cells = new Cell[numRows][numColumns];
     for (int i = 0; i < numRows; i++) {

@@ -51,6 +51,18 @@ http://localhost:8080/index.html
 
 ```
 
+### Optional: Run with PostgreSQL
+
+1. Start a PostgreSQL instance (example Docker compose):
+   ```bash
+   docker run --name othello-postgres -e POSTGRES_DB=othello -e POSTGRES_USER=othello -e POSTGRES_PASSWORD=othello -p 5432:5432 -d postgres:15
+   ```
+2. Launch the application with the `postgres` profile so Spring uses `application-postgres.properties`:
+   ```bash
+   mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+   ```
+3. The schema is created automatically (hibernate `ddl-auto=update`). Data persists across restarts.
+
 ## How to Play
 
 - **Player vs Computer:** Choose *New Game* → *Player vs Computer* to start immediately as White against the AI.

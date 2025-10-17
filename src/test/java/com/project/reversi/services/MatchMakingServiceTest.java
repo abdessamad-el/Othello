@@ -4,11 +4,13 @@ import com.project.reversi.dto.MatchStatusDTO;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchStatus;
-import com.project.reversi.repository.InMemoryGameSessionRepository;
+import com.project.reversi.repository.JpaGameSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.awt.Color;
@@ -17,18 +19,19 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.*;
 
+@DataJpaTest
 class MatchMakingServiceTest {
+
+  @Autowired
+  private JpaGameSessionRepository repository;
 
   private MatchMakingService matchMakingService;
   private SimpMessagingTemplate messagingTemplate;
 
   @BeforeEach
   void setUp() {
-    InMemoryGameSessionRepository repository = new InMemoryGameSessionRepository();
     GameSessionService gameSessionService = new GameSessionService(repository);
     messagingTemplate = Mockito.mock(SimpMessagingTemplate.class);
     matchMakingService = new MatchMakingService(gameSessionService, messagingTemplate);
