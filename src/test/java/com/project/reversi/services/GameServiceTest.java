@@ -1,25 +1,31 @@
 package com.project.reversi.services;
 
 import com.project.reversi.model.*;
-import com.project.reversi.repository.InMemoryGameSessionRepository;
+import com.project.reversi.repository.JpaGameSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.awt.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@DataJpaTest
 public class GameServiceTest {
 
-  private InMemoryGameSessionRepository repository;
+  @Autowired
+  private JpaGameSessionRepository repository;
+
   private GameService gameService;
   private GameSessionService gameSessionService;
+  private ComputerMoveEngine computerMoveEngine;
 
   @BeforeEach
   void setup() {
-    repository = new InMemoryGameSessionRepository();
-    gameService = new GameService(repository);
+    computerMoveEngine = new ComputerMoveEngine();
+    gameService = new GameService(repository, computerMoveEngine);
     gameSessionService = new GameSessionService(repository);
   }
 
@@ -40,7 +46,7 @@ public class GameServiceTest {
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
     assertEquals(MoveResult.PASS, result);
 
-    GameSession saved = repository.findById(session.getSessionId());
+    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
     assertEquals(2, saved.getWhiteScore());
     assertEquals(3, saved.getBlackScore());
     assertEquals(GameState.IN_PROGRESS, saved.getGameState());
@@ -56,7 +62,7 @@ public class GameServiceTest {
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
-    GameSession saved = repository.findById(session.getSessionId());
+    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
     assertTrue(saved.isFinished());
     assertEquals(4, saved.getWhiteScore());
     assertEquals(6, saved.getBlackScore());
@@ -91,7 +97,7 @@ public class GameServiceTest {
     MoveResult result = gameService.makeMove(session.getSessionId(), 3, 3, Color.WHITE, false);
     assertEquals(MoveResult.SUCCESS, result);
 
-    GameSession saved = repository.findById(session.getSessionId());
+    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
     assertEquals(1, saved.getCurrentTurnIndex()); // turn should advance to player 2
     assertEquals(5, saved.getWhiteScore());
     assertEquals(4, saved.getBlackScore());
@@ -107,7 +113,7 @@ public class GameServiceTest {
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
-    GameSession saved = repository.findById(session.getSessionId());
+    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
     assertTrue(saved.isFinished());
     assertEquals(7, saved.getWhiteScore());
     assertEquals(2, saved.getBlackScore());
@@ -123,7 +129,7 @@ public class GameServiceTest {
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
-    GameSession saved = repository.findById(session.getSessionId());
+    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
     assertTrue(saved.isFinished());
     assertEquals(5, saved.getWhiteScore());
     assertEquals(5, saved.getBlackScore());

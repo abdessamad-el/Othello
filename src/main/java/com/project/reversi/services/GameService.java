@@ -2,10 +2,9 @@ package com.project.reversi.services;
 
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameState;
-import com.project.reversi.model.GameType;
 import com.project.reversi.model.MoveResult;
 import com.project.reversi.model.Player;
-import com.project.reversi.repository.GameSessionRepository;
+import com.project.reversi.repository.JpaGameSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,11 +14,13 @@ import java.awt.Color;
 @Service
 public class GameService {
 
-  private final GameSessionRepository sessionRepository;
+  private final JpaGameSessionRepository sessionRepository;
+  private final ComputerMoveEngine computerMoveEngine;
   private static final Logger logger = LoggerFactory.getLogger(GameService.class);
 
-  public GameService(GameSessionRepository sessionRepository) {
+  public GameService(JpaGameSessionRepository sessionRepository, ComputerMoveEngine computerMoveEngine) {
     this.sessionRepository = sessionRepository;
+    this.computerMoveEngine = computerMoveEngine;
   }
 
   /**
@@ -34,7 +35,7 @@ public class GameService {
    * @return The resut of the move
    */
   public MoveResult makeMove(String sessionId, int row, int column, Color playerColor, boolean passFlag) {
-    GameSession session = sessionRepository.findById(sessionId);
+    GameSession session = sessionRepository.findById(sessionId).orElse(null);
     if (session == null) {
       logger.error("Session not found: {}", sessionId);
       throw new IllegalArgumentException("Session not found");
@@ -64,8 +65,17 @@ public class GameService {
     if (!session.getBoard().hasValidMove(playerColor)) {
       logger.info("Player {} has no valid moves; passing turn.", playerColor);
       session.advanceTurn();
-      updateScore(session);
+      session.snapshotBoard();
+      computerMoveEngine.updateScores(session);
       sessionRepository.save(session);
+      computerMoveEngine.playAll(session);
+      computerMoveEngine.updateScores(session);
+      session.snapshotBoard();
+      sessionRepository.save(session);
+      if (session.getBoard().isGameOver()) {
+        finalizeGame(session);
+        return MoveResult.GAME_FINISHED;
+      }
       return MoveResult.PASS;
     }
     // If the pass flag is true, we don't expect a coordinate-based move.
@@ -79,9 +89,18 @@ public class GameService {
     if (moveResult) {
       logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
-      updateScore(session);
+      session.snapshotBoard();
+      computerMoveEngine.updateScores(session);
       sessionRepository.save(session);
-      // check if the game is finished and finalize the session
+      if (session.getBoard().isGameOver()) {
+        finalizeGame(session);
+        return MoveResult.GAME_FINISHED;
+      }
+
+      computerMoveEngine.playAll(session);
+      computerMoveEngine.updateScores(session);
+      session.snapshotBoard();
+      sessionRepository.save(session);
       if (session.getBoard().isGameOver()) {
         finalizeGame(session);
         return MoveResult.GAME_FINISHED;
@@ -99,13 +118,8 @@ public class GameService {
     }
   }
 
-  private static void updateScore(GameSession session) {
-    session.setBlackScore(session.getBoard().getPieceCount(Color.BLACK));
-    session.setWhiteScore(session.getBoard().getPieceCount(Color.WHITE));
-  }
-
   public GameSession getSessionById(String sessionId) {
-    return sessionRepository.findById(sessionId);
+    return sessionRepository.findById(sessionId).orElse(null);
   }
 
   /**
@@ -124,6 +138,7 @@ public class GameService {
     session.setFinished(true);
     session.setWhiteScore(whiteCount);
     session.setBlackScore(blackCount);
+    session.snapshotBoard();
     sessionRepository.save(session);
   }
 }

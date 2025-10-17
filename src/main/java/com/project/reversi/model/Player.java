@@ -1,58 +1,88 @@
 package com.project.reversi.model;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import javax.persistence.*;
 import java.awt.Color;
 
+@Entity
+@Table(name = "player")
 public class Player {
-  private Color color;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "session_id")
+  private GameSession session;
+
+  @Column(name = "seat_index", nullable = false)
+  private int seatIndex;
+
+  @Column(name = "color", nullable = false)
+  private String colorCode;
+
+  @Column(name = "is_computer", nullable = false)
   private boolean computer;
+
   private String nickName;
-  private GameSession game;
 
+  private String userId;
 
-  private static final Logger logger = LoggerFactory.getLogger(Player.class);
+  protected Player() {
+  }
+
+  public Player(Color color, boolean computer, String nickName, int seatIndex) {
+    setColor(color);
+    this.computer = computer;
+    this.nickName = nickName;
+    this.seatIndex = seatIndex;
+  }
 
   public Player(Color color) {
-    this.color = color;
-    this.computer = false;
-    this.nickName = null;
+    this(color, false, null, -1);
   }
 
   public Player(Color color, boolean computer) {
-    this.color = color;
-    this.computer = computer;
-    this.nickName = null;
-  }
-
-  public Player(Color color, boolean computer, GameSession session) {
-    this(color, computer);
-    this.game = session;
-    if (isComputer()) {
-      session.addOnTurnChangedListener(this::performComputerMove);
-    }
+    this(color, computer, null, -1);
   }
 
   public Player(Color color, String nickName) {
-    this(color);
-    this.nickName = nickName;
+    this(color, false, nickName, -1);
   }
 
-  public String getNickName() {
-    return nickName;
+  public Long getId() {
+    return id;
   }
 
-  public void setNickName(String nickName) {
-    this.nickName = nickName;
+  public GameSession getSession() {
+    return session;
+  }
+
+  public void setSession(GameSession session) {
+    this.session = session;
+  }
+
+  public int getSeatIndex() {
+    return seatIndex;
+  }
+
+  public void setSeatIndex(int seatIndex) {
+    this.seatIndex = seatIndex;
   }
 
   public Color getColor() {
-    return color;
+    if ("BLACK".equalsIgnoreCase(colorCode)) {
+      return Color.BLACK;
+    }
+    return Color.WHITE;
   }
 
   public void setColor(Color color) {
-    this.color = color;
+    if (Color.BLACK.equals(color)) {
+      this.colorCode = "BLACK";
+    } else {
+      this.colorCode = "WHITE";
+    }
   }
 
   public boolean isComputer() {
@@ -63,31 +93,24 @@ public class Player {
     this.computer = computer;
   }
 
-  @Override
-  public String toString() {
-    return computer ? "Computer(" + color.toString() + ")" : "Player(" + color.toString() + ")";
+  public String getNickName() {
+    return nickName;
   }
 
-  private void performComputerMove() {
-    Color computerColor = game.getCurrentPlayer().getColor();
+  public void setNickName(String nickName) {
+    this.nickName = nickName;
+  }
 
-    // Check if the computer has any valid moves.
-    if (!game.getBoard().hasValidMove(computerColor)) {
-      logger.info("Computer has no valid moves; passing turn.");
-      game.advanceTurn();
-      return;
-    }
-    // Otherwise, attempt to find a valid move.
-    boolean moveMade = false;
-    for (int i = 0; i < game.getBoard().getNumRows() && !moveMade; i++) {
-      for (int j = 0; j < game.getBoard().getNumColumns() && !moveMade; j++) {
-        if (game.getBoard().makeMove(i, j, computerColor, false)) {
-          logger.info("Computer moved at ({}, {})", i, j);
-          moveMade = true;
-        }
-      }
-    }
-    // advance the turn and save the session.
-    game.advanceTurn();
+  public String getUserId() {
+    return userId;
+  }
+
+  public void setUserId(String userId) {
+    this.userId = userId;
+  }
+
+  @Override
+  public String toString() {
+    return (computer ? "Computer" : "Player") + "(" + colorCode + ")";
   }
 }

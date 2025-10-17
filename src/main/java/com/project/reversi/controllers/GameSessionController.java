@@ -64,7 +64,7 @@ public class GameSessionController {
 
     // Determine the color for the joining player based on the first player's color
     String assignedColor;
-    if (session.getPlayers().get(0).getColor().equals(Color.WHITE)) {
+    if (session.getPlayerAtSeat(0).getColor().equals(Color.WHITE)) {
       assignedColor = "BLACK";
     } else {
       assignedColor = "WHITE";
