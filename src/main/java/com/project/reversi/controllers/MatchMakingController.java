@@ -41,12 +41,8 @@ public class MatchMakingController {
     String assignedColor = matchMakingService.getAssignedColor(ticketId)
                                             .map(color -> Color.WHITE.equals(color) ? "WHITE" : "BLACK")
                                             .orElse(null);
-    String playerToken = matchMakingService.getAssignedToken(ticketId).orElse(null);
-    if (summary != null && playerToken != null) {
-      summary.setClientSeatToken(playerToken);
-    }
 
-    MatchStatusDTO dto = new MatchStatusDTO(status.name(), summary, assignedColor, playerToken);
+    MatchStatusDTO dto = new MatchStatusDTO(status.name(), summary, assignedColor);
     return ResponseEntity.ok(dto);
   }
 

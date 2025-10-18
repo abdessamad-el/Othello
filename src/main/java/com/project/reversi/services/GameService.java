@@ -34,7 +34,7 @@ public class GameService {
    * @param playerColor The color of the player making the move.
    * @return The resut of the move
    */
-  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor, boolean passFlag, String seatToken) {
+  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor, boolean passFlag) {
     GameSession session = sessionRepository.findById(sessionId).orElse(null);
     if (session == null) {
       logger.error("Session not found: {}", sessionId);
@@ -45,23 +45,6 @@ public class GameService {
       return MoveResult.GAME_FINISHED;
     }
 
-    if (seatToken == null || seatToken.isBlank()) {
-      logger.error("Seat token missing for session {}", sessionId);
-      return MoveResult.WRONG_TURN;
-    }
-
-    Player seatOwner = session.findPlayerBySeatToken(seatToken);
-    if (seatOwner == null) {
-      logger.error("Invalid seat token for session {}", sessionId);
-      return MoveResult.WRONG_TURN;
-    }
-
-    if (!seatOwner.getColor().equals(playerColor)) {
-      logger.error("Color mismatch for seat token in session {}", sessionId);
-      return MoveResult.WRONG_TURN;
-    }
-    playerColor = seatOwner.getColor();
-
     if (session.getBoard().isGameOver()) {
       // Neither player can move; the game is over.
       logger.info("No valid moves for either player in session {}. Game is finished.", sessionId);
@@ -70,12 +53,11 @@ public class GameService {
     }
     // Ensure it's the correct player's turn.
     Player currentPlayer = session.getCurrentPlayer();
-    if (currentPlayer == null || !currentPlayer.equals(seatOwner)) {
-      Color expectedColor = currentPlayer != null ? currentPlayer.getColor() : null;
+    if (!currentPlayer.getColor().equals(playerColor)) {
       logger.error(
           "Wrong turn: move attempted by {} but current turn is for {}",
           playerColor,
-          expectedColor
+          currentPlayer.getColor()
       );
       return MoveResult.WRONG_TURN;
     }

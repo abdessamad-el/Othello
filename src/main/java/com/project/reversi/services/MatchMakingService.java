@@ -25,7 +25,6 @@ public class MatchMakingService {
   private final Map<UUID, MatchMakingTicket> activeTickets = new ConcurrentHashMap<>();
   private final Map<UUID, GameSession> completedSessions = new ConcurrentHashMap<>();
   private final Map<UUID, Color> ticketColors = new ConcurrentHashMap<>();
-  private final Map<UUID, String> ticketTokens = new ConcurrentHashMap<>();
   private final GameSessionService gameSessionService;
   private final SimpMessagingTemplate messagingTemplate;
 
@@ -50,8 +49,7 @@ public class MatchMakingService {
       ticketStatusMap.put(ticketId, MatchStatus.CANCELED);
       completedSessions.remove(ticketId);
       ticketColors.remove(ticketId);
-      ticketTokens.remove(ticketId);
-      notifyTicket(ticketId, MatchStatus.CANCELED, null, null, null);
+      notifyTicket(ticketId, MatchStatus.CANCELED, null, null);
       return true;
     }
     return false;
@@ -85,8 +83,8 @@ public class MatchMakingService {
     activeTickets.remove(first.ticketId());
     activeTickets.remove(second.ticketId());
 
-    notifyMatchResult(first.ticketId(), session, assignment.colorForFirst(), session.getPlayerAtSeat(0));
-    notifyMatchResult(second.ticketId(), session, assignment.colorForSecond(), session.getPlayerAtSeat(1));
+    notifyTicket(first.ticketId(), MatchStatus.FOUND, session, assignment.colorForFirst());
+    notifyTicket(second.ticketId(), MatchStatus.FOUND, session, assignment.colorForSecond());
 
     return Optional.of(session);
   }
@@ -101,10 +99,6 @@ public class MatchMakingService {
 
   public Optional<Color> getAssignedColor(UUID ticketId) {
     return Optional.ofNullable(ticketColors.get(ticketId));
-  }
-
-  public Optional<String> getAssignedToken(UUID ticketId) {
-    return Optional.ofNullable(ticketTokens.get(ticketId));
   }
 
   private ColorAssignment assignColors(MatchMakingTicket first, MatchMakingTicket second) {
@@ -149,41 +143,13 @@ public class MatchMakingService {
 
   private record ColorAssignment(Color colorForFirst, Color colorForSecond) {}
 
-  private void notifyMatchResult(UUID ticketId, GameSession session, Color assignedColor, Player seat) {
-    String token = seat != null ? seat.getSeatToken() : null;
-    if (token != null) {
-      ticketTokens.put(ticketId, token);
-    } else {
-      ticketTokens.remove(ticketId);
-    }
-    notifyTicket(ticketId, MatchStatus.FOUND, session, assignedColor, token);
-  }
-
-  private void notifyTicket(UUID ticketId, MatchStatus status, GameSession session, Color assignedColor, String seatToken) {
+  private void notifyTicket(UUID ticketId, MatchStatus status, GameSession session, Color assignedColor) {
     if (messagingTemplate == null) {
       return;
     }
     GameSessionSummaryDTO summary = session != null ? GameSessionSummaryDTO.fromGameSession(session) : null;
     String assignedColorString = assignedColor != null ? (Color.WHITE.equals(assignedColor) ? "WHITE" : "BLACK") : null;
-    GameSessionSummaryDTO filteredSummary = summary;
-    if (summary != null && seatToken != null) {
-      filteredSummary = new GameSessionSummaryDTO();
-      filteredSummary.setSessionId(summary.getSessionId());
-      filteredSummary.setBoard(summary.getBoard());
-      filteredSummary.setPlayerColors(summary.getPlayerColors());
-      filteredSummary.setPlayerNicknames(summary.getPlayerNicknames());
-      filteredSummary.setCurrentPlayerColor(summary.getCurrentPlayerColor());
-      filteredSummary.setCurrentPlayerNickname(summary.getCurrentPlayerNickname());
-      filteredSummary.setFinished(summary.isFinished());
-      filteredSummary.setGameType(summary.getGameType());
-      filteredSummary.setBlackScore(summary.getBlackScore());
-      filteredSummary.setWhiteScore(summary.getWhiteScore());
-      filteredSummary.setGameState(summary.getGameState());
-      filteredSummary.setClientSeatToken(seatToken);
-    } else if (summary != null && seatToken == null) {
-      filteredSummary = summary;
-    }
-    MatchStatusDTO payload = new MatchStatusDTO(status.name(), filteredSummary, assignedColorString, seatToken);
+    MatchStatusDTO payload = new MatchStatusDTO(status.name(), summary, assignedColorString);
     messagingTemplate.convertAndSend("/topic/matchmaking/" + ticketId, payload);
   }
 }

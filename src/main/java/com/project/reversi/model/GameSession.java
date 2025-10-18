@@ -62,7 +62,6 @@ public class GameSession {
     // Add the creator as Player 1 (seat 0).
     Player seatZero = new Player(creator.getColor(), creator.isComputer(), creator.getNickName(), 0);
     seatZero.setSession(this);
-    seatZero.ensureSeatToken();
     this.players.add(seatZero);
 
     if (gameType == GameType.PLAYER_VS_COMPUTER) {
@@ -70,12 +69,10 @@ public class GameSession {
       Color computerColor = creator.getColor().equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
       Player computerPlayer = new Player(computerColor, true, "Computer", 1);
       computerPlayer.setSession(this);
-      computerPlayer.ensureSeatToken();
       this.players.add(computerPlayer);
     } else {
       // placeholder seat for Player 2
     }
-    ensureSeatTokens();
     this.gameState = GameState.IN_PROGRESS;
     this.whiteScore = board.getPieceCount(Color.WHITE);
     this.blackScore = board.getPieceCount(Color.BLACK);
@@ -115,16 +112,6 @@ public class GameSession {
     ordered.add(getPlayerAtSeat(0));
     ordered.add(getPlayerAtSeat(1));
     return ordered;
-  }
-
-  public Player findPlayerBySeatToken(String seatToken) {
-    if (seatToken == null || players == null) {
-      return null;
-    }
-    return players.stream()
-                  .filter(p -> p != null && seatToken.equals(p.getSeatToken()))
-                  .findFirst()
-                  .orElse(null);
   }
 
   public Player getPlayerAtSeat(int seatIndex) {
@@ -223,12 +210,10 @@ public class GameSession {
     }
     player.setSeatIndex(1);
     player.setSession(this);
-    player.ensureSeatToken();
     if (players == null) {
       players = new ArrayList<>(2);
     }
     players.add(player);
-    ensureSeatTokens();
   }
 
   // Returns true if the session is ready to start (i.e., has two non-null players).
@@ -269,17 +254,5 @@ public class GameSession {
 
   public void snapshotBoard() {
     this.boardState = BoardStateCodec.encode(board);
-    ensureSeatTokens();
-  }
-
-  private void ensureSeatTokens() {
-    if (players == null) {
-      return;
-    }
-    for (Player player : players) {
-      if (player != null) {
-        player.ensureSeatToken();
-      }
-    }
   }
 }

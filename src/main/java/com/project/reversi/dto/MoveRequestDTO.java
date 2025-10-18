@@ -6,7 +6,6 @@ public class MoveRequestDTO {
   private String color; // Expected values: "WHITE" or "BLACK"
   private String sessionId;
   private Boolean pass; // field for passing the turn
-  private String seatToken;
 
 
   public Boolean getPass() {
@@ -47,14 +46,6 @@ public class MoveRequestDTO {
 
   public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
-  }
-
-  public String getSeatToken() {
-    return seatToken;
-  }
-
-  public void setSeatToken(String seatToken) {
-    this.seatToken = seatToken;
   }
 }
 

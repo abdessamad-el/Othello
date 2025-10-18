@@ -19,7 +19,6 @@ public class GameSessionSummaryDTO {
   private int whiteScore;
   private int blackScore;
   private String gameState;
-  private String clientSeatToken;
 
   // Getters and setters
 
@@ -109,14 +108,6 @@ public class GameSessionSummaryDTO {
 
   public void setGameState(String name) {
     gameState = name;
-  }
-
-  public String getClientSeatToken() {
-    return clientSeatToken;
-  }
-
-  public void setClientSeatToken(String clientSeatToken) {
-    this.clientSeatToken = clientSeatToken;
   }
 
   public static GameSessionSummaryDTO fromGameSession(GameSession session) {

@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function() {
   let clientColor = "WHITE";
   let currentSessionSummary = null;
   let stompClient = null;
-  let clientSeatToken = null;
   let renderSequence = 0;
 
   // Matchmaking state
@@ -214,20 +213,15 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     console.log("Matchmaking update", payload);
     const status = payload.status;
-      if (status === "FOUND" && payload.gameSession) {
-        cleanupMatchmakingConnection();
-        overlay.classList.add("hidden");
-        currentSessionSummary = payload.gameSession;
-        if (payload.assignedColor) {
-          clientColor = payload.assignedColor.toUpperCase();
-        }
-        if (payload.playerToken) {
-          clientSeatToken = payload.playerToken;
-        } else if (payload.gameSession && payload.gameSession.clientSeatToken) {
-          clientSeatToken = payload.gameSession.clientSeatToken;
-        }
-        connectToSocket(currentSessionSummary.sessionId);
-        enterGame(currentSessionSummary);
+    if (status === "FOUND" && payload.gameSession) {
+      cleanupMatchmakingConnection();
+      overlay.classList.add("hidden");
+      currentSessionSummary = payload.gameSession;
+      if (payload.assignedColor) {
+        clientColor = payload.assignedColor.toUpperCase();
+      }
+      connectToSocket(currentSessionSummary.sessionId);
+      enterGame(currentSessionSummary);
     } else if (status === "CANCELED" || status === "EXPIRED") {
       cleanupMatchmakingConnection();
       overlayTitle.textContent = status === "CANCELED" ? "Matchmaking Cancelled" : "Matchmaking Expired";
@@ -291,16 +285,13 @@ document.addEventListener("DOMContentLoaded", function() {
     overlay.classList.add("hidden");
     // Call the backend endpoint for creating a new session
     fetch(`/api/session/create?gameType=${gameType}&color=WHITE`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-        console.log("New Game:", data);
-        clientColor = "WHITE";
-        if (data.clientSeatToken) {
-          clientSeatToken = data.clientSeatToken;
-        }
-        connectToSocket(data.sessionId);
-        enterGame(data);
-      })
+      .then(res => res.json())
+      .then(data => {
+      console.log("New Game:", data);
+      clientColor = "WHITE";
+      connectToSocket(data.sessionId);
+      enterGame(data);
+    })
       .catch(err => console.error("Error creating game:", err));
   };
 
@@ -314,16 +305,13 @@ document.addEventListener("DOMContentLoaded", function() {
     overlay.classList.add("hidden");
     // Call the backend endpoint for joining an existing session
     fetch(`/api/session/${sessionIdInput.value}/join`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-        console.log("Joined Game:", data);
-        clientColor = "BLACK";
-        if (data.clientSeatToken) {
-          clientSeatToken = data.clientSeatToken;
-        }
-        connectToSocket(data.sessionId);
-        enterGame(data);
-      })
+      .then(res => res.json())
+      .then(data => {
+      console.log("Joined Game:", data);
+      clientColor = "BLACK";
+      connectToSocket(data.sessionId);
+      enterGame(data);
+    })
       .catch(err => console.error("Error joining game:", err));
   };
 
@@ -336,9 +324,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // Make sure the game container is visible
     gameContainer.style.display = "inline-block";
     currentSessionSummary = sessionSummary;
-    if (sessionSummary && sessionSummary.clientSeatToken) {
-      clientSeatToken = sessionSummary.clientSeatToken;
-    }
     showSessionInfo(sessionSummary);
     renderGame(sessionSummary);
   }
@@ -378,11 +363,6 @@ document.addEventListener("DOMContentLoaded", function() {
     if (!sessionSummary || !sessionSummary.board || !sessionSummary.board.boardCells) {
       console.error("Invalid session summary!");
       return;
-    }
-
-    currentSessionSummary = sessionSummary;
-    if (sessionSummary.clientSeatToken) {
-      clientSeatToken = sessionSummary.clientSeatToken;
     }
 
     showSessionInfo(sessionSummary);
@@ -512,10 +492,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // Function to call the move endpoint
   function makeMove(sessionId, row, col, color) {
     console.log(`makeMove called with sessionId: ${sessionId}, row: ${row}, col: ${col}, color: ${color}`);
-    if (!clientSeatToken) {
-      console.error("No seat token available for move.");
-      return;
-    }
     fetch('/api/game/move', {
       method: 'POST',
       headers: {
@@ -526,8 +502,7 @@ document.addEventListener("DOMContentLoaded", function() {
         row: row,
         column: col,
         color: color,
-        pass : false,
-        seatToken: clientSeatToken
+        pass : false
       })
     })
       .then(response => {
@@ -569,10 +544,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Pass turn function: calls the move endpoint with pass: true and returns a promise.
   function passTurn(sessionId, color) {
-    if (!clientSeatToken) {
-      console.error("No seat token available for pass.");
-      return Promise.reject(new Error("Missing seat token"));
-    }
     return fetch('/api/game/move', {
       method: 'POST',
       headers: {
@@ -581,8 +552,7 @@ document.addEventListener("DOMContentLoaded", function() {
       body: JSON.stringify({
         sessionId: sessionId,
         color: color,
-        pass: true, // This tells the backend to pass the turn.
-        seatToken: clientSeatToken
+        pass: true // This tells the backend to pass the turn.
       })
     })
       .then(response => {
@@ -760,7 +730,6 @@ document.addEventListener("DOMContentLoaded", function() {
     blackScoreVal.textContent = "0";
     whiteScoreVal.textContent = "0";
     clientColor = "WHITE";
-    clientSeatToken = null;
     hideSessionInfo();
   };
 
