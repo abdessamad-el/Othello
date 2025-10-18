@@ -78,7 +78,8 @@ public class GameController {
           moveRequest.getRow(),
           moveRequest.getColumn(),
           playerColor,
-          moveRequest.getPass()
+          moveRequest.getPass(),
+          moveRequest.getSeatToken()
       );
       switch (result) {
         case SUCCESS:
@@ -105,6 +106,7 @@ public class GameController {
       }
       GameSession updatedSession = gameService.getSessionById(moveRequest.getSessionId());
       GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(updatedSession);
+      summary.setClientSeatToken(moveRequest.getSeatToken());
       response.setSessionSummary(summary);
       simpMessagingTemplate.convertAndSend("/topic/game-progress/" + response.getSessionSummary().getSessionId(), response);
       return ResponseEntity.ok(response);

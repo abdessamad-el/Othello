@@ -40,6 +40,10 @@ public class GameSessionController {
     Player creator = new Player(playerColor);
     GameSession session = gameSessionService.createGameSession(gameType, creator);
     GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(session);
+    Player seatZero = session.getPlayerAtSeat(0);
+    if (seatZero != null) {
+      summary.setClientSeatToken(seatZero.getSeatToken());
+    }
     return ResponseEntity.ok(summary);
   }
 
@@ -76,6 +80,10 @@ public class GameSessionController {
     try {
       session = gameSessionService.joinGameSession(sessionId, joiningPlayer);
       GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(session);
+      Player seatOne = session.getPlayerAtSeat(1);
+      if (seatOne != null) {
+        summary.setClientSeatToken(seatOne.getSeatToken());
+      }
       return ResponseEntity.ok(summary);
     }
     catch (IllegalArgumentException | IllegalStateException e) {
