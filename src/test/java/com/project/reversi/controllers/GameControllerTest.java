@@ -80,7 +80,7 @@ class GameControllerTest {
   @DisplayName("POST /api/game/move maps MoveResult to message and returns summary")
   void makeMoveSuccess() throws Exception {
     GameSession session = new GameSession(new Board(8, 8), new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
-    Mockito.when(gameService.makeMove(Mockito.eq(session.getSessionId()), Mockito.anyInt(), Mockito.anyInt(), Mockito.eq(Color.WHITE), Mockito.anyBoolean()))
+    Mockito.when(gameService.makeMove(Mockito.eq(session.getSessionId()), Mockito.anyInt(), Mockito.anyInt(), Mockito.eq(Color.WHITE), Mockito.anyBoolean(), Mockito.anyString()))
         .thenReturn(MoveResult.SUCCESS);
     Mockito.when(gameService.getSessionById(session.getSessionId())).thenReturn(session);
 
@@ -90,6 +90,7 @@ class GameControllerTest {
     req.setColumn(3);
     req.setColor("WHITE");
     req.setPass(false);
+    req.setSeatToken("token123");
 
     mockMvc.perform(post("/api/game/move")
             .contentType(MediaType.APPLICATION_JSON)
@@ -97,6 +98,7 @@ class GameControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.message", is("Move successful")))
         .andExpect(jsonPath("$.sessionSummary.sessionId", is(session.getSessionId())))
-        .andExpect(jsonPath("$.sessionSummary.playerNicknames", notNullValue()));
+        .andExpect(jsonPath("$.sessionSummary.playerNicknames", notNullValue()))
+        .andExpect(jsonPath("$.sessionSummary.clientSeatToken", is("token123")));
   }
 }

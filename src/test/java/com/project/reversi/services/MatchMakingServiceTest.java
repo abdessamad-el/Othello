@@ -53,8 +53,13 @@ class MatchMakingServiceTest {
     assertEquals(Color.WHITE, session.getPlayers().get(0).getColor());
     assertEquals(Color.BLACK, session.getPlayers().get(1).getColor());
 
+    String expectedFirstToken = session.getPlayers().get(0).getSeatToken();
+    String expectedSecondToken = session.getPlayers().get(1).getSeatToken();
+
     assertEquals(Color.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
     assertEquals(Color.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
+    assertEquals(expectedFirstToken, matchMakingService.getAssignedToken(firstTicket).orElse(null));
+    assertEquals(expectedSecondToken, matchMakingService.getAssignedToken(secondTicket).orElse(null));
 
     ArgumentCaptor<String> destinationCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<MatchStatusDTO> payloadCaptor = ArgumentCaptor.forClass(MatchStatusDTO.class);
@@ -64,6 +69,8 @@ class MatchMakingServiceTest {
     assertTrue(payloadCaptor.getAllValues().stream().allMatch(dto -> "FOUND".equals(dto.getStatus())));
     assertTrue(payloadCaptor.getAllValues().stream().anyMatch(dto -> "WHITE".equals(dto.getAssignedColor())));
     assertTrue(payloadCaptor.getAllValues().stream().anyMatch(dto -> "BLACK".equals(dto.getAssignedColor())));
+    assertTrue(payloadCaptor.getAllValues().stream().anyMatch(dto -> expectedFirstToken.equals(dto.getPlayerToken())));
+    assertTrue(payloadCaptor.getAllValues().stream().anyMatch(dto -> expectedSecondToken.equals(dto.getPlayerToken())));
   }
 
   @Test
@@ -82,6 +89,7 @@ class MatchMakingServiceTest {
 
     assertEquals(MatchStatus.CANCELED, matchMakingService.getStatus(ticket));
     assertTrue(matchMakingService.getSessionByTicketId(ticket).isEmpty());
+    assertTrue(matchMakingService.getAssignedToken(ticket).isEmpty());
     ArgumentCaptor<MatchStatusDTO> cancelPayload = ArgumentCaptor.forClass(MatchStatusDTO.class);
     verify(messagingTemplate, times(1)).convertAndSend(eq("/topic/matchmaking/" + ticket), cancelPayload.capture());
     assertEquals("CANCELED", cancelPayload.getValue().getStatus());
@@ -98,5 +106,7 @@ class MatchMakingServiceTest {
     assertEquals(Color.BLACK, session.getPlayers().get(1).getColor());
     assertEquals(Color.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
     assertEquals(Color.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
+    assertEquals(session.getPlayers().get(0).getSeatToken(), matchMakingService.getAssignedToken(firstTicket).orElse(null));
+    assertEquals(session.getPlayers().get(1).getSeatToken(), matchMakingService.getAssignedToken(secondTicket).orElse(null));
   }
 }

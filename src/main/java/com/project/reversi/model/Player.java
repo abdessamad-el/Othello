@@ -2,6 +2,7 @@ package com.project.reversi.model;
 
 import javax.persistence.*;
 import java.awt.Color;
+import java.util.UUID;
 
 @Entity
 @Table(name = "player")
@@ -28,6 +29,9 @@ public class Player {
 
   private String userId;
 
+  @Column(name = "seat_token", nullable = false, unique = true)
+  private String seatToken;
+
   protected Player() {
   }
 
@@ -36,6 +40,7 @@ public class Player {
     this.computer = computer;
     this.nickName = nickName;
     this.seatIndex = seatIndex;
+    ensureSeatToken();
   }
 
   public Player(Color color) {
@@ -48,6 +53,17 @@ public class Player {
 
   public Player(Color color, String nickName) {
     this(color, false, nickName, -1);
+  }
+
+  @PrePersist
+  private void prePersist() {
+    ensureSeatToken();
+  }
+
+  public void ensureSeatToken() {
+    if (seatToken == null || seatToken.isBlank()) {
+      seatToken = UUID.randomUUID().toString();
+    }
   }
 
   public Long getId() {
@@ -107,6 +123,14 @@ public class Player {
 
   public void setUserId(String userId) {
     this.userId = userId;
+  }
+
+  public String getSeatToken() {
+    return seatToken;
+  }
+
+  public void setSeatToken(String seatToken) {
+    this.seatToken = seatToken;
   }
 
   @Override
