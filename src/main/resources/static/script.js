@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const copySessionIdBtn = document.getElementById("copySessionIdBtn");
   const boardDiv = document.getElementById("board");
   const gameContainer = document.getElementById("gameContainer");
+  const WEBSOCKET_ENDPOINT = "/ws/game"; // Keep in sync with reversi.websocket.endpoint
 
   // Debug logging
   console.log("newGameBtn:", newGameBtn);
@@ -156,7 +157,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function subscribeToMatchmaking(ticketId) {
     console.log("Subscribing to matchmaking ticket", ticketId);
-    const socket = new SockJS('/move');
+    const socket = new SockJS(WEBSOCKET_ENDPOINT);
     const stomp = Stomp.over(socket);
     matchmakingClient = stomp;
     stomp.connect({}, function() {
@@ -402,7 +403,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         console.log("Valid moves:", validMoves);
         if (validMoves.length === 0) {
-        // Auto-pass only if it's our turn and no moves are available
+          // Auto-pass only if it's our turn and no moves are available
         passTurn(sessionSummary.sessionId, sessionSummary.currentPlayerColor)
         } else {
           // Valid moves exist, so render the board with highlights.
@@ -622,7 +623,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function connectToSocket(gameId) {
     console.log("connecting to the game");
-    let socket = new SockJS('/move');
+    let socket = new SockJS(WEBSOCKET_ENDPOINT);
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
       console.log("connected to the frame: " + frame);
