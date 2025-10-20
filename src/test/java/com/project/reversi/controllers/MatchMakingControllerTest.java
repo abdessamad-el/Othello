@@ -7,14 +7,19 @@ import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchStatus;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.User;
 import com.project.reversi.services.MatchMakingService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.awt.Color;
@@ -27,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(MatchMakingController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class MatchMakingControllerTest {
 
   @Autowired
@@ -38,9 +44,23 @@ class MatchMakingControllerTest {
   @MockBean
   private MatchMakingService matchMakingService;
 
+  @AfterEach
+  void clearSecurity() {
+    SecurityContextHolder.clearContext();
+  }
+
+  private User authenticateTestUser() {
+    User user = new User("test-user", "password");
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+    return user;
+  }
+
   @Test
   @DisplayName("GET /api/matchmaking/{ticketId} returns waiting status")
   void getMatchStatusWaiting() throws Exception {
+    authenticateTestUser();
     UUID ticketId = UUID.randomUUID();
     Mockito.when(matchMakingService.getStatus(ticketId)).thenReturn(MatchStatus.WAITING);
     Mockito.when(matchMakingService.getSessionByTicketId(ticketId)).thenReturn(Optional.empty());
@@ -50,6 +70,15 @@ class MatchMakingControllerTest {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.status", is("WAITING")))
            .andExpect(jsonPath("$.assignedColor", nullValue()));
+  }
+
+  @Test
+  @DisplayName("GET /api/matchmaking/auth-check returns OK for authenticated user")
+  void authCheckReturnsOk() throws Exception {
+    authenticateTestUser();
+
+    mockMvc.perform(get("/api/matchmaking/auth-check"))
+        .andExpect(status().isOk());
   }
 
   @Test
@@ -85,10 +114,11 @@ class MatchMakingControllerTest {
   @Test
   @DisplayName("POST /api/matchmaking/enqueue returns ticket id")
   void enqueueReturnsTicketId() throws Exception {
+    User user = authenticateTestUser();
     UUID ticketId = UUID.randomUUID();
-    EnqueueRequestDTO request = new EnqueueRequestDTO("Alice", "WHITE");
+    EnqueueRequestDTO request = new EnqueueRequestDTO("WHITE");
 
-    Mockito.when(matchMakingService.enqueue(request.nickName(), request.preferredColor())).thenReturn(ticketId);
+    Mockito.when(matchMakingService.enqueue(user, request.preferredColor())).thenReturn(ticketId);
 
     mockMvc.perform(post("/api/matchmaking/enqueue")
             .contentType(MediaType.APPLICATION_JSON)

@@ -9,9 +9,16 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer {
+
+  private final WebsocketProperties websocketProperties;
+
+  public WebsocketConfiguration(WebsocketProperties websocketProperties) {
+    this.websocketProperties = websocketProperties;
+  }
+
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/move").withSockJS();
+    registry.addEndpoint(websocketProperties.getEndpoint()).withSockJS();
 
   }
 

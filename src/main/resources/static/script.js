@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const copySessionIdBtn = document.getElementById("copySessionIdBtn");
   const boardDiv = document.getElementById("board");
   const gameContainer = document.getElementById("gameContainer");
+  const WEBSOCKET_ENDPOINT = "/ws/game"; // Keep in sync with reversi.websocket.endpoint
 
   // Debug logging
   console.log("newGameBtn:", newGameBtn);
@@ -29,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Set up event listeners for menu buttons
   newGameBtn.addEventListener("click", showNewGameOptions);
   joinGameBtn.addEventListener("click", showJoinGameForm);
-  findMatchBtn.addEventListener("click", showMatchmakingForm);
+  findMatchBtn.addEventListener("click", () => showMatchmakingForm());
 
   // Global variables for gameplay state
   let clientColor = "WHITE";
@@ -37,11 +38,132 @@ document.addEventListener("DOMContentLoaded", function() {
   let stompClient = null;
   let renderSequence = 0;
 
+  const PENDING_ACTION_KEY = "reversi.pendingAction";
+const LOGIN_URL = "/login";
+let replayingPendingAction = false;
+let lastAuthenticatedUsername = null;
+
+  function savePendingAction(action) {
+    if (!action) {
+      return;
+    }
+    try {
+      localStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(action));
+    } catch (err) {
+      console.warn("Failed to persist pending action", err);
+    }
+  }
+
+  function consumePendingAction() {
+    try {
+      const raw = localStorage.getItem(PENDING_ACTION_KEY);
+      if (!raw) {
+        return null;
+      }
+      localStorage.removeItem(PENDING_ACTION_KEY);
+      return JSON.parse(raw);
+    } catch (err) {
+      console.warn("Failed to read pending action", err);
+      return null;
+    }
+  }
+
+  function handleAuthRedirect(pendingAction) {
+    if (pendingAction) {
+      savePendingAction(pendingAction);
+    }
+    const next = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+    window.location.href = `${LOGIN_URL}?next=${next}`;
+  }
+
+  function isAuthRedirectError(error) {
+    return !!(error && (error.authRedirected || error.message === "Authentication required"));
+  }
+
+  function authFetch(url, options, pendingAction) {
+    return fetch(url, options).then(response => {
+      const redirectTarget = response.redirected ? response.url : "";
+      if ((response.status === 401 || response.status === 403) ||
+          (redirectTarget && redirectTarget.includes("/login"))) {
+        handleAuthRedirect(pendingAction);
+        const error = new Error("Authentication required");
+        error.authRedirected = true;
+        throw error;
+      }
+      return response;
+    });
+  }
+
+  function requireAuth(pendingAction, onSuccess) {
+    authFetch("/api/matchmaking/auth-check", { method: "GET" }, pendingAction)
+      .then(response => parseJsonResponse(response, pendingAction))
+      .then(user => {
+        if (user && user.username) {
+          lastAuthenticatedUsername = user.username;
+        }
+        if (typeof onSuccess === "function") {
+          onSuccess(user);
+        }
+      })
+      .catch(err => {
+        if (!isAuthRedirectError(err)) {
+          console.error("Authentication check failed", err);
+        }
+      });
+  }
+
+  function parseJsonResponse(response, pendingAction) {
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      if (response.redirected && response.url && response.url.includes("/login")) {
+        handleAuthRedirect(pendingAction);
+        const authError = new Error("Authentication required");
+        authError.authRedirected = true;
+        return Promise.reject(authError);
+      }
+      const error = new Error("Unexpected response type");
+      error.unexpectedContent = true;
+      return Promise.reject(error);
+    }
+    return response.json();
+  }
+
+  function resumePendingActionIfAvailable() {
+    if (replayingPendingAction) {
+      return;
+    }
+    const pending = consumePendingAction();
+    if (!pending) {
+      return;
+    }
+    console.log("Resuming pending action", pending);
+    replayingPendingAction = true;
+    try {
+      switch (pending.type) {
+        case "MATCHMAKING_ENQUEUE":
+          beginMatchmaking(pending.payload.preferredColor || null);
+          break;
+        case "MATCHMAKING_SHOW_DIALOG":
+          showMatchmakingForm();
+          break;
+        case "SESSION_CREATE":
+          window.startGame(pending.payload.gameType);
+          break;
+        case "SESSION_JOIN":
+          window.joinGame(pending.payload.sessionId);
+          break;
+        default:
+          console.warn("Unknown pending action type", pending);
+      }
+    } finally {
+      replayingPendingAction = false;
+    }
+  }
+
   // Matchmaking state
   let matchmakingClient = null;
   let matchmakingSubscription = null;
   let matchmakingTicketId = null;
-  let matchmakingNickname = null;
   let copyFeedbackTimeout = null;
 
   // Function to show overlay with new game options
@@ -75,13 +197,19 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  function showMatchmakingForm() {
+  function showMatchmakingForm(user) {
+    if (!user) {
+      requireAuth(
+        { type: "MATCHMAKING_SHOW_DIALOG" },
+        authenticatedUser => showMatchmakingForm(authenticatedUser)
+      );
+      return;
+    }
     console.log("showMatchmakingForm called");
     overlay.classList.remove("hidden");
     overlayTitle.textContent = "Find a Match";
     overlayBody.innerHTML = `
-      <label for="matchNicknameInput">Nickname</label>
-      <input type="text" id="matchNicknameInput" placeholder="Enter nickname" />
+      <p class="matchmaking-note">Signed in as <strong><span id="matchmakingUsername">-</span></strong></p>
       <label for="matchColorSelect">Preferred Color</label>
       <select id="matchColorSelect">
         <option value="">No preference</option>
@@ -93,47 +221,57 @@ document.addEventListener("DOMContentLoaded", function() {
         <button id="closeMatchmakingBtn">Close</button>
       </div>
     `;
+    const usernameDisplay = document.getElementById("matchmakingUsername");
+    const effectiveUsername = user && user.username ? user.username : lastAuthenticatedUsername;
+    if (usernameDisplay && effectiveUsername) {
+      usernameDisplay.textContent = effectiveUsername;
+    }
     document.getElementById("startMatchmakingBtn").addEventListener("click", function() {
-      const nicknameInput = document.getElementById("matchNicknameInput");
       const colorSelect = document.getElementById("matchColorSelect");
-      const nicknameValue = nicknameInput.value.trim();
-      const nickname = nicknameValue.length > 0 ? nicknameValue : `Player-${Math.floor(Math.random() * 1000)}`;
-      const preferredColor = colorSelect.value ? colorSelect.value : null;
-      beginMatchmaking(nickname, preferredColor);
+      const preferredColor = colorSelect && colorSelect.value ? colorSelect.value : null;
+      beginMatchmaking(preferredColor);
     });
     document.getElementById("closeMatchmakingBtn").addEventListener("click", function() {
       overlay.classList.add("hidden");
     });
   }
 
-  function beginMatchmaking(nickname, preferredColor) {
-    matchmakingNickname = nickname;
+  function beginMatchmaking(preferredColor) {
     overlayTitle.textContent = "Searching for Opponent";
     overlayBody.innerHTML = `
-      <p>Looking for a match as <strong>${nickname}</strong>${preferredColor ? ` (${preferredColor})` : ""}</p>
+      <p>Looking for a match${preferredColor ? ` as <strong>${preferredColor}</strong>` : ""}</p>
       <p class="matchmaking-status">Waiting for an opponent...</p>
       <button id="cancelMatchmakingBtn">Cancel</button>
     `;
     document.getElementById("cancelMatchmakingBtn").addEventListener("click", cancelMatchmaking);
-    enqueueMatchmaking(nickname, preferredColor);
+    enqueueMatchmaking(preferredColor);
   }
 
-  function enqueueMatchmaking(nickname, preferredColor) {
-    fetch('/api/matchmaking/enqueue', {
+  function enqueueMatchmaking(preferredColor) {
+    const pendingAction = {
+      type: "MATCHMAKING_ENQUEUE",
+      payload: { preferredColor }
+    };
+    authFetch('/api/matchmaking/enqueue', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        nickName: nickname,
         preferredColor: preferredColor
       })
-    })
+    }, pendingAction)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to enqueue matchmaking: ${response.status}`);
         }
-        return response.text();
+        return parseJsonResponse(response, pendingAction)
+          .catch(err => {
+            if (err.unexpectedContent) {
+              return response.text();
+            }
+            throw err;
+          });
       })
       .then(text => {
         const cleaned = text.replace(/^"|"$/g, '').trim();
@@ -143,6 +281,23 @@ document.addEventListener("DOMContentLoaded", function() {
         fetchMatchmakingStatus(cleaned);
       })
       .catch(error => {
+        if (isAuthRedirectError(error)) {
+          overlay.classList.remove("hidden");
+          overlayTitle.textContent = "Sign In Required";
+          overlayBody.innerHTML = `
+            <p class="error">Please sign in to use matchmaking.</p>
+            <button id="closeMatchmakingBtn">Close</button>
+          `;
+          document.getElementById("closeMatchmakingBtn").addEventListener("click", function() {
+            overlay.classList.add("hidden");
+          });
+          return;
+        }
+        if (error.unexpectedContent) {
+          console.error("Unexpected response while enqueuing matchmaking", error);
+          alert("Please sign in to continue matchmaking.");
+          return;
+        }
         console.error("Error enqueuing matchmaking:", error);
         overlayBody.innerHTML = `
           <p class="error">Unable to start matchmaking. Please try again later.</p>
@@ -156,7 +311,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function subscribeToMatchmaking(ticketId) {
     console.log("Subscribing to matchmaking ticket", ticketId);
-    const socket = new SockJS('/move');
+    const socket = new SockJS(WEBSOCKET_ENDPOINT);
     const stomp = Stomp.over(socket);
     matchmakingClient = stomp;
     stomp.connect({}, function() {
@@ -237,7 +392,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function cleanupMatchmakingConnection() {
     matchmakingTicketId = null;
-    matchmakingNickname = null;
     if (matchmakingSubscription) {
       matchmakingSubscription.unsubscribe();
       matchmakingSubscription = null;
@@ -284,35 +438,71 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("startGame called with:", gameType);
     overlay.classList.add("hidden");
     // Call the backend endpoint for creating a new session
-    fetch(`/api/session/create?gameType=${gameType}&color=WHITE`, { method: "POST" })
-      .then(res => res.json())
+    const url = `/api/session/create?gameType=${gameType}&color=WHITE`;
+    const requiresAuth = gameType === "PLAYER_VS_PLAYER";
+    const pendingAction = requiresAuth ? { type: "SESSION_CREATE", payload: { gameType } } : null;
+    const request = requiresAuth
+      ? authFetch(url, { method: "POST" }, pendingAction)
+      : authFetch(url, { method: "POST" }, pendingAction);
+
+    request
+      .then(res => parseJsonResponse(res, pendingAction))
       .then(data => {
-      console.log("New Game:", data);
-      clientColor = "WHITE";
-      connectToSocket(data.sessionId);
-      enterGame(data);
-    })
-      .catch(err => console.error("Error creating game:", err));
+        console.log("New Game:", data);
+        clientColor = "WHITE";
+        connectToSocket(data.sessionId);
+        enterGame(data);
+      })
+      .catch(err => {
+        if (isAuthRedirectError(err)) {
+          return;
+        }
+        if (err.unexpectedContent) {
+          console.error("Unexpected response while creating session", err);
+          alert("We could not create the session. Please sign in and try again.");
+          return;
+        }
+        console.error("Error creating game:", err);
+      });
   };
 
-  window.joinGame = function() {
+  window.joinGame = function(explicitSessionId) {
     const sessionIdInput = document.getElementById("sessionIdInput");
-    if (!sessionIdInput || !sessionIdInput.value) {
+    const providedId = typeof explicitSessionId === "string" ? explicitSessionId.trim() : "";
+    const enteredId = sessionIdInput && typeof sessionIdInput.value === "string"
+      ? sessionIdInput.value.trim()
+      : "";
+    const targetSessionId = providedId || enteredId;
+    if (!targetSessionId) {
       alert("Please enter a session ID");
       return;
     }
-    console.log("joinGame called with sessionId:", sessionIdInput.value);
+    console.log("joinGame called with sessionId:", targetSessionId);
     overlay.classList.add("hidden");
     // Call the backend endpoint for joining an existing session
-    fetch(`/api/session/${sessionIdInput.value}/join`, { method: "POST" })
-      .then(res => res.json())
+    const pendingAction = {
+      type: "SESSION_JOIN",
+      payload: { sessionId: targetSessionId }
+    };
+    authFetch(`/api/session/${targetSessionId}/join`, { method: "POST" }, pendingAction)
+      .then(res => parseJsonResponse(res, pendingAction))
       .then(data => {
-      console.log("Joined Game:", data);
-      clientColor = "BLACK";
-      connectToSocket(data.sessionId);
-      enterGame(data);
-    })
-      .catch(err => console.error("Error joining game:", err));
+        console.log("Joined Game:", data);
+        clientColor = "BLACK";
+        connectToSocket(data.sessionId);
+        enterGame(data);
+      })
+      .catch(err => {
+        if (isAuthRedirectError(err)) {
+          return;
+        }
+        if (err.unexpectedContent) {
+          console.error("Unexpected response while joining session", err);
+          alert("We could not join the session. Please sign in and try again.");
+          return;
+        }
+        console.error("Error joining game:", err);
+      });
   };
 
   // Transition to game page and render game state
@@ -402,7 +592,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         console.log("Valid moves:", validMoves);
         if (validMoves.length === 0) {
-        // Auto-pass only if it's our turn and no moves are available
+          // Auto-pass only if it's our turn and no moves are available
         passTurn(sessionSummary.sessionId, sessionSummary.currentPlayerColor)
         } else {
           // Valid moves exist, so render the board with highlights.
@@ -622,7 +812,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function connectToSocket(gameId) {
     console.log("connecting to the game");
-    let socket = new SockJS('/move');
+    let socket = new SockJS(WEBSOCKET_ENDPOINT);
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
       console.log("connected to the frame: " + frame);
@@ -740,4 +930,6 @@ document.addEventListener("DOMContentLoaded", function() {
   if (copySessionIdBtn) {
     copySessionIdBtn.addEventListener("click", copySessionId);
   }
+
+  resumePendingActionIfAvailable();
 });

@@ -4,6 +4,7 @@ import com.project.reversi.dto.MatchStatusDTO;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchStatus;
+import com.project.reversi.model.User;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,8 @@ class MatchMakingServiceTest {
 
   @Test
   void matchingAssignsOppositeColorsWhenBothPreferSame() {
-    UUID firstTicket = matchMakingService.enqueue("Alice", "WHITE");
-    UUID secondTicket = matchMakingService.enqueue("Bob", "WHITE");
+    UUID firstTicket = matchMakingService.enqueue(user("Alice"), "WHITE");
+    UUID secondTicket = matchMakingService.enqueue(user("Bob"), "WHITE");
 
     assertEquals(MatchStatus.FOUND, matchMakingService.getStatus(firstTicket));
     assertEquals(MatchStatus.FOUND, matchMakingService.getStatus(secondTicket));
@@ -68,7 +69,7 @@ class MatchMakingServiceTest {
 
   @Test
   void singleTicketRemainsWaiting() {
-    UUID ticket = matchMakingService.enqueue("Solo", null);
+    UUID ticket = matchMakingService.enqueue(user("Solo"), null);
 
     assertEquals(MatchStatus.WAITING, matchMakingService.getStatus(ticket));
     assertTrue(matchMakingService.getSessionByTicketId(ticket).isEmpty());
@@ -77,7 +78,7 @@ class MatchMakingServiceTest {
 
   @Test
   void cancelRemovesTicketFromQueue() {
-    UUID ticket = matchMakingService.enqueue("CancelMe", "BLACK");
+    UUID ticket = matchMakingService.enqueue(user("CancelMe"), "BLACK");
     assertTrue(matchMakingService.cancel(ticket));
 
     assertEquals(MatchStatus.CANCELED, matchMakingService.getStatus(ticket));
@@ -90,13 +91,28 @@ class MatchMakingServiceTest {
 
   @Test
   void mixedPreferencesAssignCorrectly() {
-    UUID firstTicket = matchMakingService.enqueue("Alice", "WHITE");
-    UUID secondTicket = matchMakingService.enqueue("Bob", "BLACK");
+    UUID firstTicket = matchMakingService.enqueue(user("Alice"), "WHITE");
+    UUID secondTicket = matchMakingService.enqueue(user("Bob"), "BLACK");
 
     GameSession session = matchMakingService.getSessionByTicketId(firstTicket).orElseThrow();
     assertEquals(Color.WHITE, session.getPlayers().get(0).getColor());
     assertEquals(Color.BLACK, session.getPlayers().get(1).getColor());
     assertEquals(Color.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
     assertEquals(Color.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
+  }
+
+  @Test
+  void enqueueSameUserThrowsException() {
+    User alice = user("Alice");
+    UUID first = matchMakingService.enqueue(alice, "WHITE");
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class,
+        () -> matchMakingService.enqueue(alice, "BLACK"));
+    assertEquals("User already in matchmaking queue", ex.getMessage());
+    assertEquals(MatchStatus.WAITING, matchMakingService.getStatus(first));
+  }
+
+  private User user(String username) {
+    return new User(username, "password");
   }
 }

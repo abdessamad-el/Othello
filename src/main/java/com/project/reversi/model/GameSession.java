@@ -59,10 +59,11 @@ public class GameSession {
     snapshotBoard();
 
     this.players = new ArrayList<>(2);
+    
     // Add the creator as Player 1 (seat 0).
-    Player seatZero = new Player(creator.getColor(), creator.isComputer(), creator.getNickName(), 0);
-    seatZero.setSession(this);
-    this.players.add(seatZero);
+    creator.setSeatIndex(0);
+    creator.setSession(this);
+    this.players.add(creator);
 
     if (gameType == GameType.PLAYER_VS_COMPUTER) {
       // Automatically create a computer player with the opposite color.
