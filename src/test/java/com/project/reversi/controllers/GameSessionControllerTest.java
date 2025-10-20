@@ -5,22 +5,28 @@ import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.Player;
 import com.project.reversi.services.GameSessionService;
+import java.awt.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.awt.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.project.reversi.model.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = GameSessionController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class GameSessionControllerTest {
 
   @Autowired
@@ -28,6 +34,20 @@ class GameSessionControllerTest {
 
   @MockBean
   private GameSessionService gameSessionService;
+
+  @BeforeEach
+  void setUpSecurityContext() {
+    User user = new User("test-user", "password");
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+  }
+
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
+  }
+
 
   @Test
   @DisplayName("POST /api/session/create creates a session and returns summary")
@@ -79,3 +99,6 @@ class GameSessionControllerTest {
         .andExpect(status().isNotFound());
   }
 }
+
+
+

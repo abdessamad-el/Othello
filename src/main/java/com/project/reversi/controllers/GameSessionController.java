@@ -4,11 +4,20 @@ import com.project.reversi.dto.GameSessionSummaryDTO;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.User;
 import com.project.reversi.services.GameSessionService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.awt.Color;
+import java.util.Objects;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/session")
@@ -22,56 +31,56 @@ public class GameSessionController {
 
   /**
    * Creates a new game session.
-   * For PLAYER_VS_COMPUTER mode, the computer player is automatically added.
-   * For PLAYER_VS_PLAYER mode, a placeholder is created for the second player.
-   * <p>
-   * Example call: POST /api/session/create?gameType=PLAYER_VS_PLAYER&color=WHITE
-   *
-   * @param gameType the type of game (PLAYER_VS_PLAYER or PLAYER_VS_COMPUTER)
-   * @param color    a string representing the creator's color ("WHITE" or "BLACK")
-   * @return the created GameSession summary in JSON format
+   * PLAYER_VS_PLAYER sessions require authentication; the authenticated user occupies seat 0.
    */
   @PostMapping("/create")
+  @PreAuthorize("#gameType != T(com.project.reversi.model.GameType).PLAYER_VS_PLAYER || isAuthenticated()")
   public ResponseEntity<GameSessionSummaryDTO> createSession(
       @RequestParam GameType gameType,
-      @RequestParam String color
+      @RequestParam String color,
+      @AuthenticationPrincipal User currentUser
   ) {
     Color playerColor = "WHITE".equalsIgnoreCase(color) ? Color.WHITE : Color.BLACK;
     Player creator = new Player(playerColor);
+    if (currentUser != null) {
+      creator.setAccount(currentUser);
+      creator.setNickName(currentUser.getUsername());
+    }
     GameSession session = gameSessionService.createGameSession(gameType, creator);
     GameSessionSummaryDTO summary = GameSessionSummaryDTO.fromGameSession(session);
     return ResponseEntity.ok(summary);
   }
 
-
   /**
-   * Allows a second player to join an existing game session.
-   * This is only valid for PLAYER_VS_PLAYER mode.
-   * <p>
-   * Example call: POST /api/session/{sessionId}/join?color=BLACK
-   *
-   * @param sessionId the unique identifier for the game session
-   * @param color     a string representing the joining player's color ("WHITE" or "BLACK")
-   * @return the updated GameSession summary, or an error if the session is not joinable
+   * Allows a second player to join an existing PLAYER_VS_PLAYER session.
    */
   @PostMapping("/{sessionId}/join")
-  public ResponseEntity<GameSessionSummaryDTO> joinSession(@PathVariable String sessionId) {
-    // Retrieve the session
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<GameSessionSummaryDTO> joinSession(
+      @PathVariable String sessionId,
+      @AuthenticationPrincipal User currentUser
+  ) {
     GameSession session = gameSessionService.getSessionById(sessionId);
     if (session == null) {
       return ResponseEntity.notFound().build();
     }
-
-    // Determine the color for the joining player based on the first player's color
-    String assignedColor;
-    if (session.getPlayerAtSeat(0).getColor().equals(Color.WHITE)) {
-      assignedColor = "BLACK";
-    } else {
-      assignedColor = "WHITE";
+    if (currentUser == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // Create the joining player with the assigned color
+    boolean alreadySeated = session.getPlayers().stream()
+        .filter(Objects::nonNull)
+        .anyMatch(player -> player.getAccount() != null
+            && player.getAccount().getId() != null
+            && player.getAccount().getId().equals(currentUser.getId()));
+    if (alreadySeated) {
+      return ResponseEntity.status(HttpStatus.CONFLICT).build();
+    }
+
+    String assignedColor = session.getPlayerAtSeat(0).getColor().equals(Color.WHITE) ? "BLACK" : "WHITE";
     Player joiningPlayer = new Player("WHITE".equalsIgnoreCase(assignedColor) ? Color.WHITE : Color.BLACK);
+    joiningPlayer.setAccount(currentUser);
+    joiningPlayer.setNickName(currentUser.getUsername());
 
     try {
       session = gameSessionService.joinGameSession(sessionId, joiningPlayer);
@@ -85,11 +94,6 @@ public class GameSessionController {
 
   /**
    * Retrieves a game session by its session ID.
-   * <p>
-   * Example call: GET /api/session/{sessionId}
-   *
-   * @param sessionId the unique identifier for the game session
-   * @return the GameSession summary in JSON format, or 404 if not found
    */
   @GetMapping("/{sessionId}")
   public ResponseEntity<GameSessionSummaryDTO> getSession(@PathVariable String sessionId) {

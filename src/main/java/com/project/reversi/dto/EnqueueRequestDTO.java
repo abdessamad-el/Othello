@@ -1,4 +1,4 @@
 package com.project.reversi.dto;
 
-public record EnqueueRequestDTO(String nickName, String preferredColor) {
+public record EnqueueRequestDTO(String preferredColor) {
 }

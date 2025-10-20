@@ -7,24 +7,22 @@ import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchMakingTicket;
 import com.project.reversi.model.MatchStatus;
 import com.project.reversi.model.Player;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
-
+import com.project.reversi.model.User;
 import java.awt.Color;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
 
 @Service
 public class MatchMakingService {
 
-  private final ConcurrentLinkedQueue<MatchMakingTicket> waitingTickets = new ConcurrentLinkedQueue<>();
-  private final Map<UUID, MatchStatus> ticketStatusMap = new ConcurrentHashMap<>();
-  private final Map<UUID, MatchMakingTicket> activeTickets = new ConcurrentHashMap<>();
-  private final Map<UUID, GameSession> completedSessions = new ConcurrentHashMap<>();
-  private final Map<UUID, Color> ticketColors = new ConcurrentHashMap<>();
+  private final ConcurrentLinkedQueue<UUID> waitingTickets = new ConcurrentLinkedQueue<>();
+  private final Map<UUID, TicketState> tickets = new ConcurrentHashMap<>();
+  private final java.util.Set<String> waitingUsers = ConcurrentHashMap.newKeySet();
   private final GameSessionService gameSessionService;
   private final SimpMessagingTemplate messagingTemplate;
 
@@ -33,72 +31,125 @@ public class MatchMakingService {
     this.messagingTemplate = messagingTemplate;
   }
 
-  public UUID enqueue(String nickName, String preferredColor) {
+  public UUID enqueue(User user, String preferredColor) {
+    if (user == null || user.getUsername() == null || user.getUsername().isBlank()) {
+      throw new IllegalArgumentException("Authenticated user required for matchmaking");
+    }
+    String username = user.getUsername();
+    boolean added = waitingUsers.add(username);
+    if (!added) {
+      throw new IllegalStateException("User already in matchmaking queue");
+    }
+
     Color colorPreference = parsePreferredColor(preferredColor);
-    MatchMakingTicket ticket = new MatchMakingTicket(nickName, colorPreference);
-    waitingTickets.add(ticket);
-    activeTickets.put(ticket.ticketId(), ticket);
-    ticketStatusMap.put(ticket.ticketId(), MatchStatus.WAITING);
+    MatchMakingTicket ticket = new MatchMakingTicket(username, colorPreference);
+    TicketState state = new TicketState(ticket, user);
+    tickets.put(ticket.ticketId(), state);
+    waitingTickets.add(ticket.ticketId());
     tryMatch();
     return ticket.ticketId();
   }
 
   public boolean cancel(UUID ticketId) {
-    MatchMakingTicket ticket = activeTickets.remove(ticketId);
-    if (ticket != null && waitingTickets.remove(ticket)) {
-      ticketStatusMap.put(ticketId, MatchStatus.CANCELED);
-      completedSessions.remove(ticketId);
-      ticketColors.remove(ticketId);
-      notifyTicket(ticketId, MatchStatus.CANCELED, null, null);
-      return true;
+    TicketState state = tickets.get(ticketId);
+    if (state == null || state.status != MatchStatus.WAITING) {
+      return false;
     }
-    return false;
+    waitingTickets.remove(ticketId);
+    state.status = MatchStatus.CANCELED;
+    state.session = null;
+    state.assignedColor = null;
+    String ownerName = state.ownerUsername();
+    if (ownerName != null) {
+      waitingUsers.remove(ownerName);
+    }
+    notifyTicket(ticketId, MatchStatus.CANCELED, null, null);
+    return true;
   }
 
   public Optional<GameSession> tryMatch() {
-    MatchMakingTicket first = waitingTickets.poll();
-    MatchMakingTicket second = waitingTickets.poll();
+    TicketState first = pollNextWaitingTicket();
+    TicketState second = pollNextWaitingTicket();
 
     if (first == null || second == null) {
       if (first != null) {
-        waitingTickets.add(first);
+        waitingTickets.add(first.ticket.ticketId());
+      }
+      if (second != null) {
+        waitingTickets.add(second.ticket.ticketId());
       }
       return Optional.empty();
     }
 
-    ColorAssignment assignment = assignColors(first, second);
+    ColorAssignment assignment = assignColors(first.ticket, second.ticket);
 
-    Player player1 = new Player(assignment.colorForFirst(), first.nickName());
-    Player player2 = new Player(assignment.colorForSecond(), second.nickName());
+    Player player1 = new Player(assignment.colorForFirst(), first.ticket.username());
+    Player player2 = new Player(assignment.colorForSecond(), second.ticket.username());
+    attachOwner(player1, first.owner);
+    attachOwner(player2, second.owner);
 
     GameSession session = gameSessionService.createGameSession(GameType.PLAYER_VS_PLAYER, player1);
     gameSessionService.joinGameSession(session.getSessionId(), player2);
 
-    ticketStatusMap.put(first.ticketId(), MatchStatus.FOUND);
-    ticketStatusMap.put(second.ticketId(), MatchStatus.FOUND);
-    completedSessions.put(first.ticketId(), session);
-    completedSessions.put(second.ticketId(), session);
-    ticketColors.put(first.ticketId(), assignment.colorForFirst());
-    ticketColors.put(second.ticketId(), assignment.colorForSecond());
-    activeTickets.remove(first.ticketId());
-    activeTickets.remove(second.ticketId());
+    first.status = MatchStatus.FOUND;
+    second.status = MatchStatus.FOUND;
+    first.assignedColor = assignment.colorForFirst();
+    second.assignedColor = assignment.colorForSecond();
+    first.session = session;
+    second.session = session;
 
-    notifyTicket(first.ticketId(), MatchStatus.FOUND, session, assignment.colorForFirst());
-    notifyTicket(second.ticketId(), MatchStatus.FOUND, session, assignment.colorForSecond());
+    String firstOwner = first.ownerUsername();
+    String secondOwner = second.ownerUsername();
+    if (firstOwner != null) {
+      waitingUsers.remove(firstOwner);
+    }
+    if (secondOwner != null) {
+      waitingUsers.remove(secondOwner);
+    }
+
+    notifyTicket(first.ticket.ticketId(), MatchStatus.FOUND, session, first.assignedColor);
+    notifyTicket(second.ticket.ticketId(), MatchStatus.FOUND, session, second.assignedColor);
 
     return Optional.of(session);
   }
 
   public Optional<GameSession> getSessionByTicketId(UUID ticketId) {
-    return Optional.ofNullable(completedSessions.get(ticketId));
+    TicketState state = tickets.get(ticketId);
+    return state != null ? Optional.ofNullable(state.session) : Optional.empty();
   }
 
   public MatchStatus getStatus(UUID ticketId) {
-    return ticketStatusMap.get(ticketId);
+    TicketState state = tickets.get(ticketId);
+    return state != null ? state.status : null;
   }
 
   public Optional<Color> getAssignedColor(UUID ticketId) {
-    return Optional.ofNullable(ticketColors.get(ticketId));
+    TicketState state = tickets.get(ticketId);
+    return state != null ? Optional.ofNullable(state.assignedColor) : Optional.empty();
+  }
+
+  private TicketState pollNextWaitingTicket() {
+    UUID id;
+    while ((id = waitingTickets.poll()) != null) {
+      TicketState state = tickets.get(id);
+      if (state == null) {
+        continue;
+      }
+      if (state.status == MatchStatus.WAITING) {
+        return state;
+      }
+    }
+    return null;
+  }
+
+  private void attachOwner(Player player, User owner) {
+    if (owner == null) {
+      return;
+    }
+    player.setAccount(owner);
+    if (player.getNickName() == null || player.getNickName().isBlank()) {
+      player.setNickName(owner.getUsername());
+    }
   }
 
   private ColorAssignment assignColors(MatchMakingTicket first, MatchMakingTicket second) {
@@ -151,5 +202,23 @@ public class MatchMakingService {
     String assignedColorString = assignedColor != null ? (Color.WHITE.equals(assignedColor) ? "WHITE" : "BLACK") : null;
     MatchStatusDTO payload = new MatchStatusDTO(status.name(), summary, assignedColorString);
     messagingTemplate.convertAndSend("/topic/matchmaking/" + ticketId, payload);
+  }
+
+  private static class TicketState {
+    private final MatchMakingTicket ticket;
+    private final User owner;
+    private volatile MatchStatus status;
+    private volatile Color assignedColor;
+    private volatile GameSession session;
+
+    private TicketState(MatchMakingTicket ticket, User owner) {
+      this.ticket = ticket;
+      this.owner = owner;
+      this.status = MatchStatus.WAITING;
+    }
+
+    private String ownerUsername() {
+      return owner != null ? owner.getUsername() : null;
+    }
   }
 }

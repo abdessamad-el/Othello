@@ -26,7 +26,9 @@ public class Player {
 
   private String nickName;
 
-  private String userId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User account;
 
   protected Player() {
   }
@@ -101,12 +103,12 @@ public class Player {
     this.nickName = nickName;
   }
 
-  public String getUserId() {
-    return userId;
+  public User getAccount() {
+    return account;
   }
 
-  public void setUserId(String userId) {
-    this.userId = userId;
+  public void setAccount(User account) {
+    this.account = account;
   }
 
   @Override
