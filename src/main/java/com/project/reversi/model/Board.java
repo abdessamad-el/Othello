@@ -8,11 +8,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-public class Board {
+public class Board  {
 
   private final int numRows;
   private final int numColumns;
   private Cell[][] cells;
+
+  public HashSet<Piece> getCellsToFlip() {
+    return cellsToFlip;
+  }
+
   private HashSet<Piece> cellsToFlip;
   private HashSet<Piece> cellsChanged;
   private HashSet<Cell> cellsToHighlight;
@@ -38,6 +43,33 @@ public class Board {
     board.loadState(snapshot);
     return board;
   }
+
+  public Board copyBoard() {
+    List<List<String>> snapshot = new ArrayList<>();
+    for(int i = 0 ; i < numRows ;i++){
+      snapshot.add(new ArrayList<>(numColumns));
+    }
+    for(int i = 0; i < numRows;i++){
+      for(int j = 0;j < numColumns;j++){
+        if(cells[i][j] instanceof Piece p){
+          if(p.getColor().equals(Color.WHITE)){
+            snapshot.get(i).add("W");
+          }
+          else {
+            snapshot.get(i).add("B");
+          }
+        }
+        else {
+          snapshot.get(i).add(" ");
+        }
+      }
+    }
+    Board boardCopy = new Board(numRows,numColumns);
+    boardCopy.loadState(snapshot);
+    return boardCopy;
+  }
+
+
 
   public void loadState(List<List<String>> snapshot) {
     if (snapshot.size() != numRows || snapshot.get(0).size() != numColumns) {
@@ -202,6 +234,19 @@ public class Board {
 
     return true;
 
+  }
+
+  public void undoMove(int row, int col, Color color, List<Piece> cellsCaptured) {
+    for (Piece piece : cellsCaptured) {
+      piece.flip();
+    }
+    updatePieceCount(color, -cellsCaptured.size());
+    updatePieceCount(getOppositeColor(color), cellsCaptured.size());
+
+    cells[row][col] = new EmptyCell(row, col);
+    updatePieceCount(color, -1);
+
+    rebuildPositionStats();
   }
 
   /**
