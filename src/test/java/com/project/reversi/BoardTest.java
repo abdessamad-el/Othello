@@ -3,8 +3,12 @@ package com.project.reversi;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.project.reversi.model.Board;
+import com.project.reversi.model.Cell;
+import com.project.reversi.model.Piece;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -75,5 +79,32 @@ public class BoardTest {
                  "White count should remain unchanged in simulation mode");
     assertEquals(initialBlack, board.getPieceCount(Color.BLACK),
                  "Black count should remain unchanged in simulation mode");
+  }
+
+  @Test
+  public void testUndoMoveRestoresState() {
+    String initialSnapshot = board.toString();
+    int initialWhite = board.getPieceCount(Color.WHITE);
+    int initialBlack = board.getPieceCount(Color.BLACK);
+
+    int moveRow = 4;
+    int moveCol = 3;
+
+    boolean moveResult = board.makeMove(moveRow, moveCol, Color.BLACK, false);
+    assertTrue(moveResult, "Expected a legal move for black at (4,3)");
+
+    List<Piece> captured = new ArrayList<>(board.getCellsToFlip());
+    board.undoMove(moveRow, moveCol, Color.BLACK, captured);
+
+    assertEquals(initialWhite, board.getPieceCount(Color.WHITE), "White count should revert after undo");
+    assertEquals(initialBlack, board.getPieceCount(Color.BLACK), "Black count should revert after undo");
+    assertEquals(initialSnapshot, board.toString(), "Board state should match the snapshot before the move");
+
+    Cell revertedCell = board.getCell(moveRow, moveCol);
+    assertFalse(revertedCell instanceof Piece, "The played square should be empty again after undo");
+
+    Cell originalPiece = board.getCell(4, 4);
+    assertTrue(originalPiece instanceof Piece, "The previously flipped disc should be restored");
+    assertEquals(Color.WHITE, ((Piece) originalPiece).getColor(), "The restored disc should regain its original colour");
   }
 }
