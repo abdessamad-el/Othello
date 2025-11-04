@@ -1,6 +1,5 @@
 package com.project.reversi;
 
-import com.project.reversi.services.AdvancedHeuristicMinMaxStrat;
 import com.project.reversi.services.ComputerStrategy;
 import com.project.reversi.services.MinMaxAlphaBetaStrat;
 import org.springframework.boot.SpringApplication;
