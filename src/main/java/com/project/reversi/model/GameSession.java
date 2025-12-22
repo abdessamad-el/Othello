@@ -104,7 +104,7 @@ public class GameSession {
   public List<Player> getPlayers() {
     return players == null ? List.of() : players.stream()
                                                    .sorted(Comparator.comparingInt(Player::getSeatIndex))
-                                                   .collect(Collectors.toUnmodifiableList());
+                                                   .toList();
   }
 
   public List<Player> getPlayersWithPlaceholders() {

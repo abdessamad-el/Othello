@@ -127,19 +127,6 @@ public class GameServiceTest {
   }
 
   /**
-   * Fake board that simulates no valid moves for any player and not game over.
-   */
-  static class FakeBoardNoMoves extends Board {
-    FakeBoardNoMoves() { super(8, 8); }
-    @Override
-    public boolean hasValidMove(Color color) { return false; }
-    @Override
-    public boolean isGameOver() { return false; }
-    @Override
-    public int getPieceCount(Color color) { return color.equals(Color.WHITE) ? 2 : 3; }
-  }
-
-  /**
    * Fake board that simulates game over with BLACK leading.
    */
   static class FakeBoardGameOver extends Board {
@@ -164,7 +151,7 @@ public class GameServiceTest {
     @Override
     public boolean isGameOver() { return false; }
     @Override
-    public int getPieceCount(Color color) { return color.equals(Color.WHITE) ? 2 : 2; }
+    public int getPieceCount(Color color) { return 2; }
   }
 
   /**
