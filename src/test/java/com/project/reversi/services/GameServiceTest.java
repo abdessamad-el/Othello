@@ -30,36 +30,12 @@ public class GameServiceTest {
   }
 
   @Test
-  void invalidPassWhenValidMovesExist() {
-    GameSession session = gameSessionService.createGameSession(GameType.PLAYER_VS_PLAYER, new Player(Color.WHITE));
-
-    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, true);
-    assertEquals(MoveResult.INVALID_PASS, result);
-  }
-
-  @Test
-  void passWhenNoValidMoves() {
-    Board board = new FakeBoardNoMoves();
-    GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
-    repository.save(session);
-
-    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
-    assertEquals(MoveResult.PASS, result);
-
-    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
-    assertEquals(2, saved.getWhiteScore());
-    assertEquals(3, saved.getBlackScore());
-    assertEquals(GameState.IN_PROGRESS, saved.getGameState());
-    assertTrue(!saved.isFinished());
-  }
-
-  @Test
   void gameFinishedWhenBoardIsOver() {
     Board board = new FakeBoardGameOver();
     GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
     repository.save(session);
 
-    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
+    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
     GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
@@ -74,7 +50,7 @@ public class GameServiceTest {
     // Create a normal session where it's WHITE's turn (index 0)
     GameSession session = gameSessionService.createGameSession(GameType.PLAYER_VS_PLAYER, new Player(Color.WHITE));
     // Attempt a move by BLACK on WHITE's turn
-    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.BLACK, false);
+    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.BLACK);
     assertEquals(MoveResult.WRONG_TURN, result);
   }
 
@@ -84,7 +60,7 @@ public class GameServiceTest {
     GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
     repository.save(session);
 
-    MoveResult result = gameService.makeMove(session.getSessionId(), 2, 2, Color.WHITE, false);
+    MoveResult result = gameService.makeMove(session.getSessionId(), 2, 2, Color.WHITE);
     assertEquals(MoveResult.INVALID_MOVE, result);
   }
 
@@ -94,7 +70,7 @@ public class GameServiceTest {
     GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
     repository.save(session);
 
-    MoveResult result = gameService.makeMove(session.getSessionId(), 3, 3, Color.WHITE, false);
+    MoveResult result = gameService.makeMove(session.getSessionId(), 3, 3, Color.WHITE);
     assertEquals(MoveResult.SUCCESS, result);
 
     GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
@@ -105,12 +81,26 @@ public class GameServiceTest {
   }
 
   @Test
+  void successfulMoveSkipsOpponentWithoutMoves() {
+    Board board = new FakeBoardNextPlayerNoMoves();
+    GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
+    session.joinSession(new Player(Color.BLACK));
+    repository.save(session);
+
+    MoveResult result = gameService.makeMove(session.getSessionId(), 3, 3, Color.WHITE);
+    assertEquals(MoveResult.SUCCESS, result);
+
+    GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
+    assertEquals(0, saved.getCurrentTurnIndex());
+  }
+
+  @Test
   void gameFinishedWhiteWins() {
     Board board = new FakeBoardGameOverWhiteWins();
     GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
     repository.save(session);
 
-    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
+    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
     GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
@@ -126,7 +116,7 @@ public class GameServiceTest {
     GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
     repository.save(session);
 
-    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE, false);
+    MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, Color.WHITE);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
     GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
@@ -184,6 +174,21 @@ public class GameServiceTest {
     FakeBoardValidMove() { super(8, 8); }
     @Override
     public boolean hasValidMove(Color color) { return true; }
+    @Override
+    public boolean makeMove(int row, int column, Color color, boolean simuMode) { return true; }
+    @Override
+    public boolean isGameOver() { return false; }
+    @Override
+    public int getPieceCount(Color color) { return color.equals(Color.WHITE) ? 5 : 4; }
+  }
+
+  /**
+   * Fake board where WHITE can move, BLACK cannot.
+   */
+  static class FakeBoardNextPlayerNoMoves extends Board {
+    FakeBoardNextPlayerNoMoves() { super(8, 8); }
+    @Override
+    public boolean hasValidMove(Color color) { return Color.WHITE.equals(color); }
     @Override
     public boolean makeMove(int row, int column, Color color, boolean simuMode) { return true; }
     @Override

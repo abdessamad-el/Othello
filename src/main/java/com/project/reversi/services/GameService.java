@@ -34,7 +34,7 @@ public class GameService {
    * @param playerColor The color of the player making the move.
    * @return The resut of the move
    */
-  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor, boolean passFlag) {
+  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor) {
     GameSession session = sessionRepository.findById(sessionId).orElse(null);
     if (session == null) {
       logger.error("Session not found: {}", sessionId);
@@ -44,7 +44,6 @@ public class GameService {
       logger.warn("Attempted move on finished session: {}", sessionId);
       return MoveResult.GAME_FINISHED;
     }
-
     if (session.getBoard().isGameOver()) {
       // Neither player can move; the game is over.
       logger.info("No valid moves for either player in session {}. Game is finished.", sessionId);
@@ -61,34 +60,15 @@ public class GameService {
       );
       return MoveResult.WRONG_TURN;
     }
-    // Check if the current player has any valid moves.
-    if (!session.getBoard().hasValidMove(playerColor)) {
-      logger.info("Player {} has no valid moves; passing turn.", playerColor);
-      session.advanceTurn();
-      session.snapshotBoard();
-      computerMoveEngine.updateScores(session);
-      sessionRepository.save(session);
-      computerMoveEngine.playAll(session);
-      computerMoveEngine.updateScores(session);
-      session.snapshotBoard();
-      sessionRepository.save(session);
-      if (session.getBoard().isGameOver()) {
-        finalizeGame(session);
-        return MoveResult.GAME_FINISHED;
-      }
-      return MoveResult.PASS;
-    }
-    // If the pass flag is true, we don't expect a coordinate-based move.
-    if (passFlag) {
-      //If valid moves exist (even though pass was requested), that's an error.
-      logger.error("Pass requested but valid moves exist for player {}", playerColor);
-      return MoveResult.INVALID_PASS;
-    }
     // Attempt the move on the board
     boolean moveResult = session.getBoard().makeMove(row, column, playerColor, false);
     if (moveResult) {
       logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
+      // advance turn if next player has no valid moves
+      if(session.getCurrentPlayer() != null && !session.getBoard().hasValidMove(session.getCurrentPlayer().getColor())){
+         session.advanceTurn();
+      }
       session.snapshotBoard();
       computerMoveEngine.updateScores(session);
       sessionRepository.save(session);

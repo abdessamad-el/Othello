@@ -77,24 +77,14 @@ public class GameController {
           moveRequest.getSessionId(),
           moveRequest.getRow(),
           moveRequest.getColumn(),
-          playerColor,
-          moveRequest.getPass()
-      );
+          playerColor);
+
       switch (result) {
         case SUCCESS:
           response.setMessage("Move successful");
           break;
         case INVALID_MOVE:
           response.setMessage("Invalid move");
-          break;
-        case INVALID_PASS:
-          response.setMessage("Pass rejected: valid moves exist");
-          break;
-        case PASS:
-          response.setMessage("Turn passed");
-          break;
-        case NO_MOVES_AVAILABLE:
-          response.setMessage("No valid moves available; turn passed");
           break;
         case GAME_FINISHED:
           response.setMessage("Game is finished, you can't do more moves");

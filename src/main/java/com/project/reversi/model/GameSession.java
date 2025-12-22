@@ -30,6 +30,7 @@ public class GameSession {
   private int whiteScore;         // piece count for white
   private int blackScore;         // piece count for black
 
+
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Player> players = new ArrayList<>();   // Two players; for PVP, second can join later; for PVC, computer is auto-added.
 
@@ -71,8 +72,6 @@ public class GameSession {
       Player computerPlayer = new Player(computerColor, true, "Computer", 1);
       computerPlayer.setSession(this);
       this.players.add(computerPlayer);
-    } else {
-      // placeholder seat for Player 2
     }
     this.gameState = GameState.IN_PROGRESS;
     this.whiteScore = board.getPieceCount(Color.WHITE);

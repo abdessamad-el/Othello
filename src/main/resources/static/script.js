@@ -591,13 +591,8 @@ let lastAuthenticatedUsername = null;
           return;
         }
         console.log("Valid moves:", validMoves);
-        if (validMoves.length === 0) {
-          // Auto-pass only if it's our turn and no moves are available
-        passTurn(sessionSummary.sessionId, sessionSummary.currentPlayerColor)
-        } else {
-          // Valid moves exist, so render the board with highlights.
-          renderBoard(sessionSummary.board.boardCells, validMoves);
-        }
+        renderBoard(sessionSummary.board.boardCells, validMoves);
+
       })
       .catch(err => {
         if (renderToken !== renderSequence) {
@@ -692,7 +687,6 @@ let lastAuthenticatedUsername = null;
         row: row,
         column: col,
         color: color,
-        pass : false
       })
     })
       .then(response => {
@@ -732,33 +726,7 @@ let lastAuthenticatedUsername = null;
     });
   }
 
-  // Pass turn function: calls the move endpoint with pass: true and returns a promise.
-  function passTurn(sessionId, color) {
-    return fetch('/api/game/move', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sessionId: sessionId,
-        color: color,
-        pass: true // This tells the backend to pass the turn.
-      })
-    })
-      .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to pass turn: ${response.status}`);
-      }
-      return response.json();
-    })
-      .then(data => {
-      console.log("Turn passed. Updated session:", data);
-    })
-      .catch(error => {
-      console.error("Error passing turn:", error);
-      throw error;
-    });
-  }
+
 
   function updateScoreboardNames(sessionSummary) {
     if (!sessionSummary) {
