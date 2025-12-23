@@ -3,10 +3,8 @@ package com.project.reversi.model;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 public class Board  {
 
@@ -24,7 +22,6 @@ public class Board  {
 
   private int blackCount;
   private int whiteCount;
-  private Map<Color, PositionStats> positionStats;
 
   public Board(int nbRows, int nbColumns) {
     numRows = nbRows;
@@ -98,36 +95,6 @@ public class Board  {
         }
       }
     }
-    rebuildPositionStats();
-  }
-
-  private void rebuildPositionStats() {
-    positionStats = new HashMap<>();
-    computeStatsForColor(Color.WHITE);
-    computeStatsForColor(Color.BLACK);
-  }
-
-  private void computeStatsForColor(Color color) {
-    PositionStats stats = null;
-    for (int row = 0; row < numRows; row++) {
-      for (int col = 0; col < numColumns; col++) {
-        Cell cell = cells[row][col];
-        if (cell instanceof Piece) {
-          Piece piece = (Piece) cell;
-          if (piece.getColor().equals(color)) {
-            if (stats == null) {
-              stats = new PositionStats(row, row, col, col);
-            } else {
-              stats.update(row, col);
-            }
-          }
-        }
-      }
-    }
-    if (stats == null) {
-      stats = new PositionStats(0, 0, 0, 0);
-    }
-    positionStats.put(color, stats);
   }
 
   private void initBoard() {
@@ -148,16 +115,6 @@ public class Board  {
     cellsToFlip = new HashSet<>();
     cellsChanged = new HashSet<>();
     cellsToHighlight = new HashSet<>();
-    initPositionStats(middleRow, middleColumn);
-  }
-
-  public void initPositionStats(int middleRow, int middleColumn) {
-    positionStats = new HashMap<>();
-    // Both colors start with the same bounds based on the initial positions.
-    PositionStats whiteStats = new PositionStats(middleRow, middleRow + 1, middleColumn, middleColumn + 1);
-    PositionStats blackStats = new PositionStats(middleRow, middleRow + 1, middleColumn, middleColumn + 1);
-    positionStats.put(Color.WHITE, whiteStats);
-    positionStats.put(Color.BLACK, blackStats);
   }
 
   public void printBoard() {
@@ -221,14 +178,12 @@ public class Board  {
     }
     for (Piece piece : cellsToFlip) {
       piece.flip();
-      updatePositionStats(piece.getRow(), piece.getColumn(), piece.getColor());
       cellsChanged.add(piece);
     }
     updatePieceCount(color, cellsToFlip.size());
     updatePieceCount(getOppositeColor(color), -cellsToFlip.size());
 
     cells[row][column] = new Piece(row, column, color);
-    updatePositionStats(row, column, color);
     cellsChanged.add((Piece) cells[row][column]);
     updatePieceCount(color, 1);
 
@@ -246,7 +201,6 @@ public class Board  {
     cells[row][col] = new EmptyCell(row, col);
     updatePieceCount(color, -1);
 
-    rebuildPositionStats();
   }
 
   /**
@@ -283,13 +237,8 @@ public class Board  {
 
 
   private void highlightPossibleMoves(Color color) {
-    PositionStats stats = positionStats.get(color);
-    int rowMin = stats.getRowMin();
-    int rowMax = stats.getRowMax();
-    int colMin = stats.getColMin();
-    int colMax = stats.getColMax();
-    for (int row = rowMin - 1; row <= rowMax + 1; row++) {
-      for (int col = colMin - 1; col <= colMax + 1; col++) {
+    for (int row = 0; row < numRows; row++) {
+      for (int col = 0; col < numColumns; col++) {
         if (!isOutOfBounds(row, col) && makeMove(row, col, color, true)) {
           cellsToHighlight.add(cells[row][col]);
         }
@@ -325,11 +274,6 @@ public class Board  {
 
   public HashSet<Piece> getCellsChanged() {
     return cellsChanged;
-  }
-
-  public void updatePositionStats(int row, int column, Color color) {
-    PositionStats stats = positionStats.get(color);
-    stats.update(row, column);
   }
 
   public int getNumRows() {
