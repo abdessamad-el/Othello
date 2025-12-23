@@ -7,6 +7,7 @@ import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchStatus;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.model.User;
 import com.project.reversi.services.MatchMakingService;
 import org.junit.jupiter.api.AfterEach;
@@ -22,7 +23,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.awt.Color;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -85,12 +85,12 @@ class MatchMakingControllerTest {
   @DisplayName("GET /api/matchmaking/{ticketId} returns session summary when found")
   void getMatchStatusFound() throws Exception {
     UUID ticketId = UUID.randomUUID();
-    GameSession session = new GameSession(new Board(8, 8), new Player(Color.WHITE, "Alice"), GameType.PLAYER_VS_PLAYER);
-    session.joinSession(new Player(Color.BLACK, "Bob"));
+    GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE, "Alice"), GameType.PLAYER_VS_PLAYER);
+    session.joinSession(new Player(PlayerColor.BLACK, "Bob"));
 
     Mockito.when(matchMakingService.getStatus(ticketId)).thenReturn(MatchStatus.FOUND);
     Mockito.when(matchMakingService.getSessionByTicketId(ticketId)).thenReturn(Optional.of(session));
-    Mockito.when(matchMakingService.getAssignedColor(ticketId)).thenReturn(Optional.of(Color.WHITE));
+    Mockito.when(matchMakingService.getAssignedColor(ticketId)).thenReturn(Optional.of(PlayerColor.WHITE));
 
     mockMvc.perform(get("/api/matchmaking/" + ticketId))
            .andExpect(status().isOk())

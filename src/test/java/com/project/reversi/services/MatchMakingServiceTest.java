@@ -4,6 +4,7 @@ import com.project.reversi.dto.MatchStatusDTO;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchStatus;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.model.User;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
-import java.awt.Color;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,11 +51,11 @@ class MatchMakingServiceTest {
 
     GameSession session = sessionOptional.get();
     assertEquals(GameType.PLAYER_VS_PLAYER, session.getGameType());
-    assertEquals(Color.WHITE, session.getPlayers().get(0).getColor());
-    assertEquals(Color.BLACK, session.getPlayers().get(1).getColor());
+    assertEquals(PlayerColor.WHITE, session.getPlayers().get(0).getColor());
+    assertEquals(PlayerColor.BLACK, session.getPlayers().get(1).getColor());
 
-    assertEquals(Color.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
-    assertEquals(Color.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
+    assertEquals(PlayerColor.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
+    assertEquals(PlayerColor.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
 
     ArgumentCaptor<String> destinationCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<MatchStatusDTO> payloadCaptor = ArgumentCaptor.forClass(MatchStatusDTO.class);
@@ -95,10 +95,10 @@ class MatchMakingServiceTest {
     UUID secondTicket = matchMakingService.enqueue(user("Bob"), "BLACK");
 
     GameSession session = matchMakingService.getSessionByTicketId(firstTicket).orElseThrow();
-    assertEquals(Color.WHITE, session.getPlayers().get(0).getColor());
-    assertEquals(Color.BLACK, session.getPlayers().get(1).getColor());
-    assertEquals(Color.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
-    assertEquals(Color.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
+    assertEquals(PlayerColor.WHITE, session.getPlayers().get(0).getColor());
+    assertEquals(PlayerColor.BLACK, session.getPlayers().get(1).getColor());
+    assertEquals(PlayerColor.WHITE, matchMakingService.getAssignedColor(firstTicket).orElse(null));
+    assertEquals(PlayerColor.BLACK, matchMakingService.getAssignedColor(secondTicket).orElse(null));
   }
 
   @Test

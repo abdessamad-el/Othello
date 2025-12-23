@@ -1,9 +1,11 @@
 package com.project.reversi.dto;
 
+import com.project.reversi.model.PlayerColor;
+
 public class MoveRequestDTO {
   private int row;
   private int column;
-  private String color; // Expected values: "WHITE" or "BLACK"
+  private PlayerColor color;
   private String sessionId;
 
 
@@ -23,11 +25,11 @@ public class MoveRequestDTO {
     this.column = column;
   }
 
-  public String getColor() {
+  public PlayerColor getColor() {
     return color;
   }
 
-  public void setColor(String color) {
+  public void setColor(PlayerColor color) {
     this.color = color;
   }
 

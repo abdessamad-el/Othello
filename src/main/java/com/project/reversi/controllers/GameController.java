@@ -7,6 +7,7 @@ import com.project.reversi.dto.MoveResponseDTO;
 import com.project.reversi.dto.GameSessionSummaryDTO;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.MoveResult;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.services.GameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,7 +52,7 @@ public class GameController {
     if (session == null) {
       return ResponseEntity.badRequest().build();
     }
-    Color playerColor = "WHITE".equalsIgnoreCase(moveRequest.getColor()) ? Color.WHITE : Color.BLACK;
+    PlayerColor playerColor = moveRequest.getColor();
     List<MoveDTO> validMoves = session.getBoard()
                                       .computeValidMoves(playerColor)
                                       .stream()
@@ -71,7 +71,7 @@ public class GameController {
   @PostMapping("/move")
   public ResponseEntity<MoveResponseDTO> makeMove(@RequestBody MoveRequestDTO moveRequest) {
     MoveResponseDTO response = new MoveResponseDTO();
-    Color playerColor = "WHITE".equalsIgnoreCase(moveRequest.getColor()) ? Color.WHITE : Color.BLACK;
+    PlayerColor playerColor = moveRequest.getColor();
     try {
       MoveResult result = gameService.makeMove(
           moveRequest.getSessionId(),

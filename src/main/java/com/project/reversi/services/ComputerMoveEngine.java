@@ -2,12 +2,11 @@ package com.project.reversi.services;
 
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.awt.Color;
 
 @Service
 public class ComputerMoveEngine {
@@ -34,7 +33,7 @@ public class ComputerMoveEngine {
     }
 
     Player computer = session.getCurrentPlayer();
-    Color computerColor = computer.getColor();
+    PlayerColor computerColor = computer.getColor();
 
     if (!session.getBoard().hasValidMove(computerColor)) {
       LOGGER.info("Computer has no valid moves; passing turn.");
@@ -53,7 +52,7 @@ public class ComputerMoveEngine {
       LOGGER.error("Computer strategy returned an invalid move at ({}, {})", move[0], move[1]);
       return false;
     }
-    LOGGER.info("Computer moved at ({}, {})", move[0], move[1]);
+    LOGGER.info("Computer {} moved at ({}, {})",computerColor, move[0], move[1]);
     session.snapshotBoard();
     updateScores(session);
     session.advanceTurn();
@@ -66,8 +65,8 @@ public class ComputerMoveEngine {
   }
 
   public void updateScores(GameSession session) {
-    session.setBlackScore(session.getBoard().getPieceCount(Color.BLACK));
-    session.setWhiteScore(session.getBoard().getPieceCount(Color.WHITE));
+    session.setBlackScore(session.getBoard().getPieceCount(PlayerColor.BLACK));
+    session.setWhiteScore(session.getBoard().getPieceCount(PlayerColor.WHITE));
   }
 }
 

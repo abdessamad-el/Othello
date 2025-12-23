@@ -2,13 +2,11 @@ package com.project.reversi.model;
 
 import com.project.reversi.model.Cell;
 
-import java.awt.*;
-
 public class Piece extends Cell {
-  private Color color;
+  private PlayerColor color;
 
 
-  public Piece(int row, int column, Color color) {
+  public Piece(int row, int column, PlayerColor color) {
     super(row, column);
     this.color = color;
   }
@@ -16,19 +14,19 @@ public class Piece extends Cell {
 
   @Override
   public void printCell() {
-    System.out.print(color.equals(Color.WHITE) ? "W" : "B");
+    System.out.print(color == PlayerColor.WHITE ? "W" : "B");
   }
 
 
   public String toString() {
-    return color.equals(Color.WHITE) ? "W" : "B";
+    return color == PlayerColor.WHITE ? "W" : "B";
   }
 
   public void flip() {
-    color = color.equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
+    color = color == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
   }
 
-  public Color getColor() {
+  public PlayerColor getColor() {
     return color;
   }
 }

@@ -4,9 +4,9 @@ import com.project.reversi.model.Board;
 import com.project.reversi.model.Cell;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.Piece;
+import com.project.reversi.model.PlayerColor;
 import org.springframework.data.util.Pair;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
   }
 
   @Override
-  public int[] execute(GameSession session, Color computerColor) {
+  public int[] execute(GameSession session, PlayerColor computerColor) {
 
     Board copyBoard = session.getBoard().copyBoard();
     var result = minMaxAlphaBeta(copyBoard,depth,Integer.MIN_VALUE,Integer.MAX_VALUE,computerColor,true);
@@ -31,7 +31,7 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
   }
 
 
-  public Pair<Integer,int[]> minMaxAlphaBeta(Board board , int depth, int alpha, int beta, Color computerColor, boolean isComputer){
+  public Pair<Integer,int[]> minMaxAlphaBeta(Board board , int depth, int alpha, int beta, PlayerColor computerColor, boolean isComputer){
     if(board.isGameOver() || depth == 0) {
       return Pair.of(evalFunction(board,computerColor),new int[]{-1,-1});
     }
@@ -60,7 +60,7 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
       return Pair.of(alpha,bestMove);
     }
     else {
-      Color oppositeColor = board.getOppositeColor(computerColor);
+      PlayerColor oppositeColor = board.getOppositeColor(computerColor);
       List<int[]> validMoves = board.computeValidMoves(oppositeColor);
 
       if(validMoves.isEmpty()){
@@ -84,7 +84,7 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
   }
   
   /* 
-  public int evalFunction(Board board ,Color computerColor){
+  public int evalFunction(Board board ,PlayerColor computerColor){
     return board.getPieceCount(computerColor) - board.getPieceCount(board.getOppositeColor(computerColor));
   }
   */
@@ -101,8 +101,8 @@ private static final int[][] POSITION_WEIGHTS = {
     {100, -20, 10, 5, 5, 10, -20, 100}
 };
 
-public int evalFunction(Board board, Color computerColor) {
-  Color opponent = board.getOppositeColor(computerColor);
+public int evalFunction(Board board, PlayerColor computerColor) {
+  PlayerColor opponent = board.getOppositeColor(computerColor);
   int score = 0;
   for (int row = 0; row < board.getNumRows(); row++) {
     for (int col = 0; col < board.getNumColumns(); col++) {

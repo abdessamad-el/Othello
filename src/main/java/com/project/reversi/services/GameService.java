@@ -4,12 +4,11 @@ import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameState;
 import com.project.reversi.model.MoveResult;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.awt.Color;
 
 @Service
 public class GameService {
@@ -34,7 +33,7 @@ public class GameService {
    * @param playerColor The color of the player making the move.
    * @return The resut of the move
    */
-  public MoveResult makeMove(String sessionId, int row, int column, Color playerColor) {
+  public MoveResult makeMove(String sessionId, int row, int column, PlayerColor playerColor) {
     GameSession session = sessionRepository.findById(sessionId).orElse(null);
     if (session == null) {
       logger.error("Session not found: {}", sessionId);
@@ -52,7 +51,7 @@ public class GameService {
     }
     // Ensure it's the correct player's turn.
     Player currentPlayer = session.getCurrentPlayer();
-    if (!currentPlayer.getColor().equals(playerColor)) {
+    if (currentPlayer.getColor() != playerColor) {
       logger.error(
           "Wrong turn: move attempted by {} but current turn is for {}",
           playerColor,
@@ -92,7 +91,7 @@ public class GameService {
           "Invalid move attempted at ({}, {}) by player {}",
           row,
           column,
-          playerColor.equals(Color.WHITE) ? "White" : "Black"
+          playerColor == PlayerColor.WHITE ? "White" : "Black"
       );
       return MoveResult.INVALID_MOVE;
     }
@@ -106,8 +105,8 @@ public class GameService {
    * Finalizes the game: calculates scores, sets the game state, and marks the session as finished.
    */
   private void finalizeGame(GameSession session) {
-    int whiteCount = session.getBoard().getPieceCount(Color.WHITE);
-    int blackCount = session.getBoard().getPieceCount(Color.BLACK);
+    int whiteCount = session.getBoard().getPieceCount(PlayerColor.WHITE);
+    int blackCount = session.getBoard().getPieceCount(PlayerColor.BLACK);
     if (whiteCount > blackCount) {
       session.setGameState(GameState.WHITE_WINS);
     } else if (whiteCount < blackCount) {

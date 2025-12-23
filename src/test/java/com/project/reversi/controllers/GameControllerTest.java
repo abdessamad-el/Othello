@@ -15,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.awt.*;
 import java.util.Arrays;
 
 import static org.hamcrest.Matchers.*;
@@ -41,7 +40,7 @@ class GameControllerTest {
   @Test
   @DisplayName("GET /api/game/board returns board DTO for session")
   void getBoard() throws Exception {
-    GameSession session = new GameSession(new Board(8, 8), new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
+    GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
     Mockito.when(gameService.getSessionById(session.getSessionId())).thenReturn(session);
 
     mockMvc.perform(get("/api/game/board").param("sessionId", session.getSessionId()))
@@ -56,16 +55,16 @@ class GameControllerTest {
     // Build session with a board whose computeValidMoves returns a known set
     Board board = new Board(8, 8) {
       @Override
-      public java.util.List<int[]> computeValidMoves(Color color) {
+      public java.util.List<int[]> computeValidMoves(PlayerColor color) {
         return Arrays.asList(new int[]{2, 3}, new int[]{4, 5});
       }
     };
-    GameSession session = new GameSession(board, new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
+    GameSession session = new GameSession(board, new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
     Mockito.when(gameService.getSessionById(session.getSessionId())).thenReturn(session);
 
     MoveRequestDTO req = new MoveRequestDTO();
     req.setSessionId(session.getSessionId());
-    req.setColor("WHITE");
+    req.setColor(PlayerColor.WHITE);
 
     mockMvc.perform(post("/api/game/possible-moves")
             .contentType(MediaType.APPLICATION_JSON)
@@ -81,8 +80,8 @@ class GameControllerTest {
   @Test
   @DisplayName("POST /api/game/move maps MoveResult to message and returns summary")
   void makeMoveSuccess() throws Exception {
-    GameSession session = new GameSession(new Board(8, 8), new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
-    Mockito.when(gameService.makeMove(Mockito.eq(session.getSessionId()), Mockito.anyInt(), Mockito.anyInt(), Mockito.eq(Color.WHITE)))
+    GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
+    Mockito.when(gameService.makeMove(Mockito.eq(session.getSessionId()), Mockito.anyInt(), Mockito.anyInt(), Mockito.eq(PlayerColor.WHITE)))
         .thenReturn(MoveResult.SUCCESS);
     Mockito.when(gameService.getSessionById(session.getSessionId())).thenReturn(session);
 
@@ -90,7 +89,7 @@ class GameControllerTest {
     req.setSessionId(session.getSessionId());
     req.setRow(2);
     req.setColumn(3);
-    req.setColor("WHITE");
+    req.setColor(PlayerColor.WHITE);
 
     mockMvc.perform(post("/api/game/move")
             .contentType(MediaType.APPLICATION_JSON)

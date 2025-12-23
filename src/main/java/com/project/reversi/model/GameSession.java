@@ -1,11 +1,11 @@
 package com.project.reversi.model;
 
 import javax.persistence.*;
-import java.awt.Color;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,6 +44,8 @@ public class GameSession {
   @Version
   private Integer version;
 
+  private Stack<Move> moveHistory;
+
   /**
    * Creates a new game session.
    * For PLAYER_VS_COMPUTER, the computer player is automatically added.
@@ -68,14 +70,14 @@ public class GameSession {
 
     if (gameType == GameType.PLAYER_VS_COMPUTER) {
       // Automatically create a computer player with the opposite color.
-      Color computerColor = creator.getColor().equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
+      PlayerColor computerColor = creator.getColor() == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
       Player computerPlayer = new Player(computerColor, true, "Computer", 1);
       computerPlayer.setSession(this);
       this.players.add(computerPlayer);
     }
     this.gameState = GameState.IN_PROGRESS;
-    this.whiteScore = board.getPieceCount(Color.WHITE);
-    this.blackScore = board.getPieceCount(Color.BLACK);
+    this.whiteScore = board.getPieceCount(PlayerColor.WHITE);
+    this.blackScore = board.getPieceCount(PlayerColor.BLACK);
   }
 
   protected GameSession() {
@@ -251,6 +253,7 @@ public class GameSession {
     lastModifiedAt = LocalDateTime.now();
     snapshotBoard();
   }
+
 
   public void snapshotBoard() {
     this.boardState = BoardStateCodec.encode(board);

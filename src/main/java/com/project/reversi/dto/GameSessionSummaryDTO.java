@@ -2,8 +2,8 @@ package com.project.reversi.dto;
 
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 
-import java.awt.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -119,7 +119,7 @@ public class GameSessionSummaryDTO {
     // Map players to their color strings. If a player is null, use "N/A".
     summary.setPlayerColors(
         session.getPlayersWithPlaceholders().stream()
-               .map(player -> player == null ? "N/A" : player.getColor().equals(Color.BLACK) ? "BLACK" : "WHITE")
+               .map(player -> player == null ? "N/A" : player.getColor() == PlayerColor.BLACK ? "BLACK" : "WHITE")
                .collect(Collectors.toList())
     );
 
@@ -130,7 +130,7 @@ public class GameSessionSummaryDTO {
     );
 
     Player currentPlayer = session.getCurrentPlayer();
-    summary.setCurrentPlayerColor(currentPlayer != null ? currentPlayer.getColor().equals(Color.BLACK)
+    summary.setCurrentPlayerColor(currentPlayer != null ? currentPlayer.getColor() == PlayerColor.BLACK
                                                           ? "BLACK"
                                                           : "WHITE" : "N/A");
     summary.setCurrentPlayerNickname(resolveNickname(currentPlayer));
@@ -153,6 +153,6 @@ public class GameSessionSummaryDTO {
     if (nickname != null && !nickname.isBlank()) {
       return nickname;
     }
-    return player.getColor().equals(Color.BLACK) ? "Black Player" : "White Player";
+    return player.getColor() == PlayerColor.BLACK ? "Black Player" : "White Player";
   }
 }

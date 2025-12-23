@@ -1,6 +1,5 @@
 package com.project.reversi.model;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,7 +48,7 @@ public class Board  {
     for(int i = 0; i < numRows;i++){
       for(int j = 0;j < numColumns;j++){
         if(cells[i][j] instanceof Piece p){
-          if(p.getColor().equals(Color.WHITE)){
+          if(p.getColor().equals(PlayerColor.WHITE)){
             snapshot.get(i).add("W");
           }
           else {
@@ -83,11 +82,11 @@ public class Board  {
       for (int j = 0; j < numColumns; j++) {
         String val = snapshot.get(i).get(j);
         if ("B".equalsIgnoreCase(val)) {
-          cells[i][j] = new Piece(i, j, Color.BLACK);
+          cells[i][j] = new Piece(i, j, PlayerColor.BLACK);
           blackCount++;
         }
         else if ("W".equalsIgnoreCase(val)) {
-          cells[i][j] = new Piece(i, j, Color.WHITE);
+          cells[i][j] = new Piece(i, j, PlayerColor.WHITE);
           whiteCount++;
         }
         else {
@@ -106,10 +105,10 @@ public class Board  {
     }
     int middleRow = (numRows - 1) / 2;
     int middleColumn = (numColumns - 1) / 2;
-    cells[middleRow][middleColumn] = new Piece(middleRow, middleColumn, Color.WHITE);
-    cells[middleRow + 1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, Color.WHITE);
-    cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, Color.BLACK);
-    cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, Color.BLACK);
+    cells[middleRow][middleColumn] = new Piece(middleRow, middleColumn, PlayerColor.WHITE);
+    cells[middleRow + 1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, PlayerColor.WHITE);
+    cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, PlayerColor.BLACK);
+    cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, PlayerColor.BLACK);
     blackCount = 2;
     whiteCount = 2;
     cellsToFlip = new HashSet<>();
@@ -132,7 +131,7 @@ public class Board  {
     return row < 0 || row >= numRows || column < 0 || column >= numColumns;
   }
 
-  public boolean makeMove(final int row, final int column, final Color color, boolean simuMode) {
+  public boolean makeMove(final int row, final int column, final PlayerColor color, boolean simuMode) {
     cellsToFlip.clear();
     cellsChanged.clear();
     // Check if the move is out-of-bounds or the cell is already occupied.
@@ -191,7 +190,7 @@ public class Board  {
 
   }
 
-  public void undoMove(int row, int col, Color color, List<Piece> cellsCaptured) {
+  public void undoMove(int row, int col, PlayerColor color, List<Piece> cellsCaptured) {
     for (Piece piece : cellsCaptured) {
       piece.flip();
     }
@@ -205,10 +204,10 @@ public class Board  {
 
   /**
    * Returns the list of opponent pieces that would be flipped in the given direction,
-   * starting from (row, col). If the direction does not end with a piece of the same color,
+   * starting from (row, col). If the direction does not end with a piece of the same PlayerColor,
    * an empty list is returned.
    */
-  private List<Piece> getFlipsInDirection(int row, int col, int deltaRow, int deltaCol, Color color) {
+  private List<Piece> getFlipsInDirection(int row, int col, int deltaRow, int deltaCol, PlayerColor color) {
     List<Piece> flips = new ArrayList<>();
     int r = row + deltaRow;
     int c = col + deltaCol;
@@ -231,12 +230,12 @@ public class Board  {
       r += deltaRow;
       c += deltaCol;
     }
-    // Went off-board without closing with a piece of the same color.
+    // Went off-board without closing with a piece of the same PlayerColor.
     return Collections.emptyList();
   }
 
 
-  private void highlightPossibleMoves(Color color) {
+  private void highlightPossibleMoves(PlayerColor color) {
     for (int row = 0; row < numRows; row++) {
       for (int col = 0; col < numColumns; col++) {
         if (!isOutOfBounds(row, col) && makeMove(row, col, color, true)) {
@@ -246,30 +245,30 @@ public class Board  {
     }
   }
 
-  public HashSet<Cell> getCellsToHighlight(Color color) {
+  public HashSet<Cell> getCellsToHighlight(PlayerColor color) {
     cellsToHighlight.clear();
     highlightPossibleMoves(color);
     return cellsToHighlight;
   }
 
-  public int getPieceCount(Color color) {
-    if (color == Color.BLACK) {
+  public int getPieceCount(PlayerColor color) {
+    if (color == PlayerColor.BLACK) {
       return blackCount;
     } else {
       return whiteCount;
     }
   }
 
-  private void updatePieceCount(Color color, int number) {
-    if (color == Color.WHITE) {
+  private void updatePieceCount(PlayerColor color, int number) {
+    if (color == PlayerColor.WHITE) {
       whiteCount += number;
-    } else if (color == Color.BLACK) {
+    } else if (color == PlayerColor.BLACK) {
       blackCount += number;
     }
   }
 
-  public Color getOppositeColor(Color color) {
-    return color.equals(Color.WHITE) ? Color.BLACK : Color.WHITE;
+  public PlayerColor getOppositeColor(PlayerColor color) {
+    return color == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
   }
 
   public HashSet<Piece> getCellsChanged() {
@@ -302,7 +301,7 @@ public class Board  {
   }
 
 
-  public boolean hasValidMove(Color color) {
+  public boolean hasValidMove(PlayerColor color) {
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
         // Use simulation mode (e.g., makeMove with simuMode=true) to check if the move would be valid
@@ -314,7 +313,7 @@ public class Board  {
     return false;
   }
 
-  public List<int[]> computeValidMoves(Color color) {
+  public List<int[]> computeValidMoves(PlayerColor color) {
     List<int[]> validMoves = new ArrayList<>();
     for (int row = 0; row < numRows; row++) {
       for (int col = 0; col < numColumns; col++) {
@@ -327,7 +326,7 @@ public class Board  {
   }
 
   public boolean isGameOver() {
-    return whiteCount + blackCount == 64 || (!hasValidMove(Color.WHITE) && !hasValidMove(Color.BLACK));
+    return whiteCount + blackCount == 64 || (!hasValidMove(PlayerColor.WHITE) && !hasValidMove(PlayerColor.BLACK));
   }
 
 

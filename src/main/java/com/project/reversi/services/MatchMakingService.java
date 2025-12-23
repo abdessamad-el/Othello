@@ -7,8 +7,8 @@ import com.project.reversi.model.GameType;
 import com.project.reversi.model.MatchMakingTicket;
 import com.project.reversi.model.MatchStatus;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.model.User;
-import java.awt.Color;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,7 +41,7 @@ public class MatchMakingService {
       throw new IllegalStateException("User already in matchmaking queue");
     }
 
-    Color colorPreference = parsePreferredColor(preferredColor);
+    PlayerColor colorPreference = parsePreferredColor(preferredColor);
     MatchMakingTicket ticket = new MatchMakingTicket(username, colorPreference);
     TicketState state = new TicketState(ticket, user);
     tickets.put(ticket.ticketId(), state);
@@ -123,7 +123,7 @@ public class MatchMakingService {
     return state != null ? state.status : null;
   }
 
-  public Optional<Color> getAssignedColor(UUID ticketId) {
+  public Optional<PlayerColor> getAssignedColor(UUID ticketId) {
     TicketState state = tickets.get(ticketId);
     return state != null ? Optional.ofNullable(state.assignedColor) : Optional.empty();
   }
@@ -153,11 +153,11 @@ public class MatchMakingService {
   }
 
   private ColorAssignment assignColors(MatchMakingTicket first, MatchMakingTicket second) {
-    Color desiredFirst = first.preferredColor();
-    Color desiredSecond = second.preferredColor();
+    PlayerColor desiredFirst = first.preferredColor();
+    PlayerColor desiredSecond = second.preferredColor();
 
     if (desiredFirst == null && desiredSecond == null) {
-      return new ColorAssignment(Color.BLACK, Color.WHITE);
+      return new ColorAssignment(PlayerColor.BLACK, PlayerColor.WHITE);
     }
 
     if (desiredFirst != null && desiredSecond == null) {
@@ -172,34 +172,34 @@ public class MatchMakingService {
       return new ColorAssignment(desiredFirst, desiredSecond);
     }
 
-    Color assignedFirst = desiredFirst != null ? desiredFirst : Color.BLACK;
+    PlayerColor assignedFirst = desiredFirst != null ? desiredFirst : PlayerColor.BLACK;
     return new ColorAssignment(assignedFirst, oppositeColor(assignedFirst));
   }
 
-  private Color parsePreferredColor(String preferredColor) {
+  private PlayerColor parsePreferredColor(String preferredColor) {
     if (preferredColor == null) {
       return null;
     }
     String normalized = preferredColor.trim().toUpperCase();
     return switch (normalized) {
-      case "WHITE" -> Color.WHITE;
-      case "BLACK" -> Color.BLACK;
+      case "WHITE" -> PlayerColor.WHITE;
+      case "BLACK" -> PlayerColor.BLACK;
       default -> null;
     };
   }
 
-  private Color oppositeColor(Color color) {
-    return Color.WHITE.equals(color) ? Color.BLACK : Color.WHITE;
+  private PlayerColor oppositeColor(PlayerColor color) {
+    return color == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
   }
 
-  private record ColorAssignment(Color colorForFirst, Color colorForSecond) {}
+  private record ColorAssignment(PlayerColor colorForFirst, PlayerColor colorForSecond) {}
 
-  private void notifyTicket(UUID ticketId, MatchStatus status, GameSession session, Color assignedColor) {
+  private void notifyTicket(UUID ticketId, MatchStatus status, GameSession session, PlayerColor assignedColor) {
     if (messagingTemplate == null) {
       return;
     }
     GameSessionSummaryDTO summary = session != null ? GameSessionSummaryDTO.fromGameSession(session) : null;
-    String assignedColorString = assignedColor != null ? (Color.WHITE.equals(assignedColor) ? "WHITE" : "BLACK") : null;
+    String assignedColorString = assignedColor != null ? (assignedColor == PlayerColor.WHITE ? "WHITE" : "BLACK") : null;
     MatchStatusDTO payload = new MatchStatusDTO(status.name(), summary, assignedColorString);
     messagingTemplate.convertAndSend("/topic/matchmaking/" + ticketId, payload);
   }
@@ -208,7 +208,7 @@ public class MatchMakingService {
     private final MatchMakingTicket ticket;
     private final User owner;
     private volatile MatchStatus status;
-    private volatile Color assignedColor;
+    private volatile PlayerColor assignedColor;
     private volatile GameSession session;
 
     private TicketState(MatchMakingTicket ticket, User owner) {

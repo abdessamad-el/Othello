@@ -4,8 +4,8 @@ import com.project.reversi.model.Board;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.services.GameSessionService;
-import java.awt.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -52,7 +52,7 @@ class GameSessionControllerTest {
   @Test
   @DisplayName("POST /api/session/create creates a session and returns summary")
   void createSession() throws Exception {
-    GameSession session = new GameSession(new Board(8, 8), new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
+    GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
     Mockito.when(gameSessionService.createGameSession(Mockito.eq(GameType.PLAYER_VS_PLAYER), Mockito.any()))
         .thenReturn(session);
 
@@ -73,11 +73,11 @@ class GameSessionControllerTest {
   @Test
   @DisplayName("POST /api/session/{id}/join joins existing session")
   void joinSession() throws Exception {
-    GameSession existing = new GameSession(new Board(8, 8), new Player(Color.WHITE), GameType.PLAYER_VS_PLAYER);
+    GameSession existing = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
     Mockito.when(gameSessionService.getSessionById(existing.getSessionId())).thenReturn(existing);
 
     GameSession afterJoin = existing;
-    afterJoin.joinSession(new Player(Color.BLACK));
+    afterJoin.joinSession(new Player(PlayerColor.BLACK));
     Mockito.when(gameSessionService.joinGameSession(Mockito.eq(existing.getSessionId()), Mockito.any(Player.class)))
         .thenReturn(afterJoin);
 

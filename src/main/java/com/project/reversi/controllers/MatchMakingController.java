@@ -4,9 +4,9 @@ import com.project.reversi.dto.EnqueueRequestDTO;
 import com.project.reversi.dto.GameSessionSummaryDTO;
 import com.project.reversi.dto.MatchStatusDTO;
 import com.project.reversi.model.MatchStatus;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.model.User;
 import com.project.reversi.services.MatchMakingService;
-import java.awt.Color;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,7 +46,7 @@ public class MatchMakingController {
     }
 
     String assignedColor = matchMakingService.getAssignedColor(ticketId)
-        .map(color -> Color.WHITE.equals(color) ? "WHITE" : "BLACK")
+        .map(color -> color == PlayerColor.WHITE ? "WHITE" : "BLACK")
         .orElse(null);
 
     MatchStatusDTO dto = new MatchStatusDTO(status.name(), summary, assignedColor);

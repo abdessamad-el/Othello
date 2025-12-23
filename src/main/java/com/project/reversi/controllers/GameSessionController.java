@@ -4,9 +4,9 @@ import com.project.reversi.dto.GameSessionSummaryDTO;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.model.User;
 import com.project.reversi.services.GameSessionService;
-import java.awt.Color;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,11 +37,10 @@ public class GameSessionController {
   @PreAuthorize("#gameType != T(com.project.reversi.model.GameType).PLAYER_VS_PLAYER || isAuthenticated()")
   public ResponseEntity<GameSessionSummaryDTO> createSession(
       @RequestParam GameType gameType,
-      @RequestParam String color,
+      @RequestParam PlayerColor color,
       @AuthenticationPrincipal User currentUser
   ) {
-    Color playerColor = "WHITE".equalsIgnoreCase(color) ? Color.WHITE : Color.BLACK;
-    Player creator = new Player(playerColor);
+    Player creator = new Player(color);
     if (currentUser != null) {
       creator.setAccount(currentUser);
       creator.setNickName(currentUser.getUsername());
@@ -77,8 +76,8 @@ public class GameSessionController {
       return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
 
-    String assignedColor = session.getPlayerAtSeat(0).getColor().equals(Color.WHITE) ? "BLACK" : "WHITE";
-    Player joiningPlayer = new Player("WHITE".equalsIgnoreCase(assignedColor) ? Color.WHITE : Color.BLACK);
+    String assignedColor = session.getPlayerAtSeat(0).getColor() == PlayerColor.WHITE ? "BLACK" : "WHITE";
+    Player joiningPlayer = new Player("WHITE".equalsIgnoreCase(assignedColor) ? PlayerColor.WHITE : PlayerColor.BLACK);
     joiningPlayer.setAccount(currentUser);
     joiningPlayer.setNickName(currentUser.getUsername());
 

@@ -1,7 +1,6 @@
 package com.project.reversi.model;
 
 import javax.persistence.*;
-import java.awt.Color;
 
 @Entity
 @Table(name = "player")
@@ -18,8 +17,9 @@ public class Player {
   @Column(name = "seat_index", nullable = false)
   private int seatIndex;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "color", nullable = false)
-  private String colorCode;
+  private PlayerColor color;
 
   @Column(name = "is_computer", nullable = false)
   private boolean computer;
@@ -33,22 +33,22 @@ public class Player {
   protected Player() {
   }
 
-  public Player(Color color, boolean computer, String nickName, int seatIndex) {
+  public Player(PlayerColor color, boolean computer, String nickName, int seatIndex) {
     setColor(color);
     this.computer = computer;
     this.nickName = nickName;
     this.seatIndex = seatIndex;
   }
 
-  public Player(Color color) {
+  public Player(PlayerColor color) {
     this(color, false, null, -1);
   }
 
-  public Player(Color color, boolean computer) {
+  public Player(PlayerColor color, boolean computer) {
     this(color, computer, null, -1);
   }
 
-  public Player(Color color, String nickName) {
+  public Player(PlayerColor color, String nickName) {
     this(color, false, nickName, -1);
   }
 
@@ -72,19 +72,12 @@ public class Player {
     this.seatIndex = seatIndex;
   }
 
-  public Color getColor() {
-    if ("BLACK".equalsIgnoreCase(colorCode)) {
-      return Color.BLACK;
-    }
-    return Color.WHITE;
+  public PlayerColor getColor() {
+    return color;
   }
 
-  public void setColor(Color color) {
-    if (Color.BLACK.equals(color)) {
-      this.colorCode = "BLACK";
-    } else {
-      this.colorCode = "WHITE";
-    }
+  public void setColor(PlayerColor color) {
+    this.color = color;
   }
 
   public boolean isComputer() {
@@ -113,6 +106,6 @@ public class Player {
 
   @Override
   public String toString() {
-    return (computer ? "Computer" : "Player") + "(" + colorCode + ")";
+    return (computer ? "Computer" : "Player") + "(" + color + ")";
   }
 }
