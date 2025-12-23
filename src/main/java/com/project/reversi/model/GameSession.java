@@ -5,9 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Stack;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "game_session")
@@ -43,8 +41,6 @@ public class GameSession {
 
   @Version
   private Integer version;
-
-  private Stack<Move> moveHistory;
 
   /**
    * Creates a new game session.
