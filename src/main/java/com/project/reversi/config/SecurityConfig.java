@@ -54,7 +54,7 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeRequests(auth -> auth
-            .antMatchers("/", "/index.html", "/style.css", "/script.js", "/favicon.ico", "/css/**", "/js/**", "/images/**",
+            .antMatchers("/", "/index.html", "/style.css", "/favicon.ico", "/css/**", "/js/**", "/images/**",
                 websocketEndpoint, websocketEndpoint + "/**").permitAll()
             .antMatchers("/api/auth/**").permitAll()
             .antMatchers("/h2-console/**").permitAll()
