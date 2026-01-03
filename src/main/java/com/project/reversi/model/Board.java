@@ -9,7 +9,7 @@ public class Board  {
 
   private final int numRows;
   private final int numColumns;
-  private Cell[][] cells;
+  private Piece[][] board;
 
   public HashSet<Piece> getCellsToFlip() {
     return cellsToFlip;
@@ -17,7 +17,7 @@ public class Board  {
 
   private HashSet<Piece> cellsToFlip;
   private HashSet<Piece> cellsChanged;
-  private HashSet<Cell> cellsToHighlight;
+  private HashSet<Piece> cellsToHighlight;
 
   private int blackCount;
   private int whiteCount;
@@ -42,25 +42,23 @@ public class Board  {
 
   public Board copyBoard() {
     List<List<String>> snapshot = new ArrayList<>();
-    for(int i = 0 ; i < numRows ;i++){
+    for (int i = 0; i < numRows; i++) {
       snapshot.add(new ArrayList<>(numColumns));
     }
-    for(int i = 0; i < numRows;i++){
-      for(int j = 0;j < numColumns;j++){
-        if(cells[i][j] instanceof Piece p){
-          if(p.getColor().equals(PlayerColor.WHITE)){
-            snapshot.get(i).add("W");
-          }
-          else {
-            snapshot.get(i).add("B");
-          }
-        }
-        else {
+    for (int i = 0; i < numRows; i++) {
+      for (int j = 0; j < numColumns; j++) {
+
+
+        if (board[i][j] != null && board[i][j].getColor().equals(PlayerColor.WHITE)) {
+          snapshot.get(i).add("W");
+        } else if (board[i][j] != null) {
+          snapshot.get(i).add("B");
+        } else {
           snapshot.get(i).add(" ");
         }
       }
     }
-    Board boardCopy = new Board(numRows,numColumns);
+    Board boardCopy = new Board(numRows, numColumns);
     boardCopy.loadState(snapshot);
     return boardCopy;
   }
@@ -71,7 +69,7 @@ public class Board  {
     if (snapshot.size() != numRows || snapshot.get(0).size() != numColumns) {
       throw new IllegalArgumentException("Snapshot dimensions do not match board size");
     }
-    cells = new Cell[numRows][numColumns];
+    board = new Piece[numRows][numColumns];
     blackCount = 0;
     whiteCount = 0;
     cellsToFlip.clear();
@@ -82,33 +80,25 @@ public class Board  {
       for (int j = 0; j < numColumns; j++) {
         String val = snapshot.get(i).get(j);
         if ("B".equalsIgnoreCase(val)) {
-          cells[i][j] = new Piece(i, j, PlayerColor.BLACK);
+          board[i][j] = new Piece(PlayerColor.BLACK);
           blackCount++;
         }
         else if ("W".equalsIgnoreCase(val)) {
-          cells[i][j] = new Piece(i, j, PlayerColor.WHITE);
+          board[i][j] = new Piece(PlayerColor.WHITE);
           whiteCount++;
-        }
-        else {
-          cells[i][j] = new EmptyCell(i, j);
         }
       }
     }
   }
 
   private void initBoard() {
-    cells = new Cell[numRows][numColumns];
-    for (int i = 0; i < numRows; i++) {
-      for (int j = 0; j < numColumns; j++) {
-        cells[i][j] = new EmptyCell(i, j);
-      }
-    }
-    int middleRow = (numRows - 1) / 2;
+    board = new Piece[numRows][numColumns];
+    int middleRow = (numRows - 1)  / 2;
     int middleColumn = (numColumns - 1) / 2;
-    cells[middleRow][middleColumn] = new Piece(middleRow, middleColumn, PlayerColor.WHITE);
-    cells[middleRow + 1][middleColumn + 1] = new Piece(middleRow + 1, middleColumn + 1, PlayerColor.WHITE);
-    cells[middleRow + 1][middleColumn] = new Piece(middleRow + 1, middleColumn, PlayerColor.BLACK);
-    cells[middleRow][middleColumn + 1] = new Piece(middleRow, middleColumn + 1, PlayerColor.BLACK);
+    board[middleRow][middleColumn] = new Piece(PlayerColor.WHITE);
+    board[middleRow + 1][middleColumn] = new Piece(PlayerColor.BLACK);
+    board[middleRow + 1][middleColumn+1] = new Piece(PlayerColor.WHITE);
+    board[middleRow][middleColumn + 1] = new Piece(PlayerColor.BLACK);
     blackCount = 2;
     whiteCount = 2;
     cellsToFlip = new HashSet<>();
@@ -119,7 +109,7 @@ public class Board  {
   public void printBoard() {
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
-        cells[i][j].printCell();
+        System.out.println(board[i][j] != null ? board[i][j].toString():"-");
         System.out.print(",");
       }
       System.out.println();
@@ -135,7 +125,7 @@ public class Board  {
     cellsToFlip.clear();
     cellsChanged.clear();
     // Check if the move is out-of-bounds or the cell is already occupied.
-    if (isOutOfBounds(row, column) || cells[row][column] instanceof Piece) {
+    if (isOutOfBounds(row, column) || board[row][column] != null) {
       return false;
     }
 
@@ -156,10 +146,10 @@ public class Board  {
       if (isOutOfBounds(neighborRow, neighborCol)) {
         continue;
       }
-      if (!(cells[neighborRow][neighborCol] instanceof Piece)) {
+      if (board[neighborRow][neighborCol] == null) {
         continue;
       }
-      Piece neighborPiece = (Piece) cells[neighborRow][neighborCol];
+      Piece neighborPiece = board[neighborRow][neighborCol];
       if (neighborPiece.getColor() == color) {
         continue;
       }
@@ -182,8 +172,8 @@ public class Board  {
     updatePieceCount(color, cellsToFlip.size());
     updatePieceCount(getOppositeColor(color), -cellsToFlip.size());
 
-    cells[row][column] = new Piece(row, column, color);
-    cellsChanged.add((Piece) cells[row][column]);
+    board[row][column] = new Piece(color);
+    cellsChanged.add(board[row][column]);
     updatePieceCount(color, 1);
 
     return true;
@@ -197,7 +187,7 @@ public class Board  {
     updatePieceCount(color, -cellsCaptured.size());
     updatePieceCount(getOppositeColor(color), cellsCaptured.size());
 
-    cells[row][col] = new EmptyCell(row, col);
+    board[row][col] = null;
     updatePieceCount(color, -1);
 
   }
@@ -213,13 +203,12 @@ public class Board  {
     int c = col + deltaCol;
 
     while (!isOutOfBounds(r, c)) {
-      Cell cell = cells[r][c];
-      if (cell instanceof EmptyCell) {
+      Piece piece = board[r][c];
+      if (piece == null) {
         // No enclosing piece; invalid direction.
         return Collections.emptyList();
       }
-      if (cell instanceof Piece) {
-        Piece piece = (Piece) cell;
+      else {
         if (piece.getColor() == color) {
           // Only valid if at least one opponent piece is in between.
           return flips.isEmpty() ? Collections.emptyList() : flips;
@@ -239,13 +228,13 @@ public class Board  {
     for (int row = 0; row < numRows; row++) {
       for (int col = 0; col < numColumns; col++) {
         if (!isOutOfBounds(row, col) && makeMove(row, col, color, true)) {
-          cellsToHighlight.add(cells[row][col]);
+          cellsToHighlight.add(board[row][col]);
         }
       }
     }
   }
 
-  public HashSet<Cell> getCellsToHighlight(PlayerColor color) {
+  public HashSet<Piece> getCellsToHighlight(PlayerColor color) {
     cellsToHighlight.clear();
     highlightPossibleMoves(color);
     return cellsToHighlight;
@@ -283,8 +272,8 @@ public class Board  {
     return numColumns;
   }
 
-  public Cell getCell(int row, int column) {
-    return cells[row][column];
+  public Piece getPiece(int row, int column) {
+    return board[row][column];
   }
 
   @Override
@@ -292,7 +281,7 @@ public class Board  {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
-        sb.append(cells[i][j].toString());
+        sb.append(board[i][j] != null ? board[i][j]:"-");
         sb.append(",");
       }
       sb.append("\n");

@@ -1,7 +1,6 @@
 package com.project.reversi.services;
 
 import com.project.reversi.model.Board;
-import com.project.reversi.model.Cell;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.Piece;
 import com.project.reversi.model.PlayerColor;
@@ -106,8 +105,8 @@ public int evalFunction(Board board, PlayerColor computerColor) {
   int score = 0;
   for (int row = 0; row < board.getNumRows(); row++) {
     for (int col = 0; col < board.getNumColumns(); col++) {
-      Cell cell = board.getCell(row, col);
-      if (cell instanceof Piece piece) {
+      Piece piece = board.getPiece(row, col);
+      if (piece != null) {
         if (piece.getColor().equals(computerColor)) {
           score += POSITION_WEIGHTS[row][col];
         } else if (piece.getColor().equals(opponent)) {

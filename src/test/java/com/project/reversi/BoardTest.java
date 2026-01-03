@@ -1,16 +1,19 @@
 package com.project.reversi;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import com.project.reversi.model.Board;
-import com.project.reversi.model.Cell;
 import com.project.reversi.model.Piece;
 import com.project.reversi.model.PlayerColor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BoardTest {
   private Board board;
@@ -100,11 +103,11 @@ public class BoardTest {
     assertEquals(initialBlack, board.getPieceCount(PlayerColor.BLACK), "Black count should revert after undo");
     assertEquals(initialSnapshot, board.toString(), "Board state should match the snapshot before the move");
 
-    Cell revertedCell = board.getCell(moveRow, moveCol);
-    assertFalse(revertedCell instanceof Piece, "The played square should be empty again after undo");
+    Piece revertedCell = board.getPiece(moveRow, moveCol);
+    assertNull(revertedCell, "The played square should be empty again after undo");
 
-    Cell originalPiece = board.getCell(4, 4);
-    assertTrue(originalPiece instanceof Piece, "The previously flipped disc should be restored");
+    Piece originalPiece = board.getPiece(4, 4);
+    assertNotNull(originalPiece, "The previously flipped disc should be restored");
     assertEquals(PlayerColor.WHITE, ((Piece) originalPiece).getColor(), "The restored disc should regain its original colour");
   }
 }

@@ -23,7 +23,7 @@ public class BoardDTO {
     for (int i = 0; i < board.getNumRows(); i++) {
       List<String> row = new ArrayList<>();
       for (int j = 0; j < board.getNumColumns(); j++) {
-        row.add(board.getCell(i, j).toString());
+        row.add(board.getPiece(i, j) != null ? board.getPiece(i,j).toString() : "-");
       }
       cells.add(row);
     }
