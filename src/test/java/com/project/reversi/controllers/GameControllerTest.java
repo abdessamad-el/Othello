@@ -16,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -52,14 +53,13 @@ class GameControllerTest {
   @Test
   @DisplayName("POST /api/game/possible-moves returns computed moves")
   void getPossibleMoves() throws Exception {
-    // Build session with a board whose computeValidMoves returns a known set
-    Board board = new Board(8, 8) {
+    Board board = new Board(8, 8);
+    GameSession session = new GameSession(board, new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER) {
       @Override
       public java.util.List<int[]> computeValidMoves(PlayerColor color) {
         return Arrays.asList(new int[]{2, 3}, new int[]{4, 5});
       }
     };
-    GameSession session = new GameSession(board, new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
     Mockito.when(gameService.getSessionById(session.getSessionId())).thenReturn(session);
 
     MoveRequestDTO req = new MoveRequestDTO();

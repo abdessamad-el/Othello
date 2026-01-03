@@ -53,12 +53,12 @@ public class GameController {
       return ResponseEntity.badRequest().build();
     }
     PlayerColor playerColor = moveRequest.getColor();
-    List<MoveDTO> validMoves = session.getBoard()
-                                      .computeValidMoves(playerColor)
-                                      .stream()
-                                      .map(move -> new MoveDTO(move[0], move[1]))
-                                      .collect(
-                                          Collectors.toList());
+    List<MoveDTO> validMoves = session
+        .computeValidMoves(playerColor)
+        .stream()
+        .map(move -> new MoveDTO(move[0], move[1]))
+        .collect(
+            Collectors.toList());
     return ResponseEntity.ok(validMoves);
   }
 

@@ -1,11 +1,21 @@
 package com.project.reversi.services;
 
-import com.project.reversi.model.*;
+import com.project.reversi.model.Board;
+import com.project.reversi.model.GameSession;
+import com.project.reversi.model.GameState;
+import com.project.reversi.model.GameType;
+import com.project.reversi.model.MoveResult;
+import com.project.reversi.model.Piece;
+import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -130,9 +140,7 @@ public class GameServiceTest {
   static class FakeBoardGameOver extends Board {
     FakeBoardGameOver() { super(8, 8); }
     @Override
-    public boolean isGameOver() { return true; }
-    @Override
-    public boolean hasValidMove(PlayerColor color) { return false; }
+    public List<Piece> makeMove(int row, int column, PlayerColor color, boolean simuMode) { return Collections.emptyList(); }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 4 : 6; }
   }
@@ -143,11 +151,12 @@ public class GameServiceTest {
   static class FakeBoardInvalidMove extends Board {
     FakeBoardInvalidMove() { super(8, 8); }
     @Override
-    public boolean hasValidMove(PlayerColor color) { return true; }
-    @Override
-    public boolean makeMove(int row, int column, PlayerColor color, boolean simuMode) { return false; }
-    @Override
-    public boolean isGameOver() { return false; }
+    public List<Piece> makeMove(int row, int column, PlayerColor color, boolean simuMode) {
+      if (simuMode) {
+        return Collections.singletonList(new Piece(PlayerColor.WHITE));
+      }
+      return Collections.emptyList();
+    }
     @Override
     public int getPieceCount(PlayerColor color) { return 2; }
   }
@@ -158,11 +167,7 @@ public class GameServiceTest {
   static class FakeBoardValidMove extends Board {
     FakeBoardValidMove() { super(8, 8); }
     @Override
-    public boolean hasValidMove(PlayerColor color) { return true; }
-    @Override
-    public boolean makeMove(int row, int column, PlayerColor color, boolean simuMode) { return true; }
-    @Override
-    public boolean isGameOver() { return false; }
+    public List<Piece> makeMove(int row, int column, PlayerColor color, boolean simuMode) { return Collections.singletonList(new Piece(PlayerColor.WHITE)); }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 5 : 4; }
   }
@@ -173,11 +178,12 @@ public class GameServiceTest {
   static class FakeBoardNextPlayerNoMoves extends Board {
     FakeBoardNextPlayerNoMoves() { super(8, 8); }
     @Override
-    public boolean hasValidMove(PlayerColor color) { return PlayerColor.WHITE == color; }
-    @Override
-    public boolean makeMove(int row, int column, PlayerColor color, boolean simuMode) { return true; }
-    @Override
-    public boolean isGameOver() { return false; }
+    public List<Piece> makeMove(int row, int column, PlayerColor color, boolean simuMode) {
+      if (color == PlayerColor.BLACK) {
+        return Collections.emptyList();
+      }
+      return Collections.singletonList(new Piece(PlayerColor.WHITE));
+    }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 5 : 4; }
   }
@@ -188,9 +194,7 @@ public class GameServiceTest {
   static class FakeBoardGameOverWhiteWins extends Board {
     FakeBoardGameOverWhiteWins() { super(8, 8); }
     @Override
-    public boolean isGameOver() { return true; }
-    @Override
-    public boolean hasValidMove(PlayerColor color) { return false; }
+    public List<Piece> makeMove(int row, int column, PlayerColor color, boolean simuMode) { return Collections.emptyList(); }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 7 : 2; }
   }
@@ -201,9 +205,7 @@ public class GameServiceTest {
   static class FakeBoardGameOverTie extends Board {
     FakeBoardGameOverTie() { super(8, 8); }
     @Override
-    public boolean isGameOver() { return true; }
-    @Override
-    public boolean hasValidMove(PlayerColor color) { return false; }
+    public List<Piece> makeMove(int row, int column, PlayerColor color, boolean simuMode) { return Collections.emptyList(); }
     @Override
     public int getPieceCount(PlayerColor color) { return 5; }
   }

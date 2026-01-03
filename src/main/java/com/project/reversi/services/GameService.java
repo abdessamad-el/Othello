@@ -3,12 +3,15 @@ package com.project.reversi.services;
 import com.project.reversi.model.GameSession;
 import com.project.reversi.model.GameState;
 import com.project.reversi.model.MoveResult;
+import com.project.reversi.model.Piece;
 import com.project.reversi.model.Player;
 import com.project.reversi.model.PlayerColor;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class GameService {
@@ -43,7 +46,7 @@ public class GameService {
       logger.warn("Attempted move on finished session: {}", sessionId);
       return MoveResult.GAME_FINISHED;
     }
-    if (session.getBoard().isGameOver()) {
+    if (session.isGameOver()) {
       // Neither player can move; the game is over.
       logger.info("No valid moves for either player in session {}. Game is finished.", sessionId);
       finalizeGame(session);
@@ -60,18 +63,18 @@ public class GameService {
       return MoveResult.WRONG_TURN;
     }
     // Attempt the move on the board
-    boolean moveResult = session.getBoard().makeMove(row, column, playerColor, false);
-    if (moveResult) {
+    List<Piece> moveResult = session.getBoard().makeMove(row, column, playerColor, false);
+    if (!moveResult.isEmpty()) {
       logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
       // advance turn if next player has no valid moves
-      if(session.getCurrentPlayer() != null && !session.getBoard().hasValidMove(session.getCurrentPlayer().getColor())){
+      if(session.getCurrentPlayer() != null && !session.hasValidMove(session.getCurrentPlayer().getColor())){
          session.advanceTurn();
       }
       session.snapshotBoard();
       computerMoveEngine.updateScores(session);
       sessionRepository.save(session);
-      if (session.getBoard().isGameOver()) {
+      if (session.isGameOver()) {
         finalizeGame(session);
         return MoveResult.GAME_FINISHED;
       }
@@ -80,7 +83,7 @@ public class GameService {
       computerMoveEngine.updateScores(session);
       session.snapshotBoard();
       sessionRepository.save(session);
-      if (session.getBoard().isGameOver()) {
+      if (session.isGameOver()) {
         finalizeGame(session);
         return MoveResult.GAME_FINISHED;
       }

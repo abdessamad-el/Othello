@@ -58,7 +58,7 @@ public class GameSession {
     snapshotBoard();
 
     this.players = new ArrayList<>(2);
-    
+
     // Add the creator as Player 1 (seat 0).
     creator.setSeatIndex(0);
     creator.setSession(this);
@@ -101,8 +101,8 @@ public class GameSession {
 
   public List<Player> getPlayers() {
     return players == null ? List.of() : players.stream()
-                                                   .sorted(Comparator.comparingInt(Player::getSeatIndex))
-                                                   .toList();
+                                                .sorted(Comparator.comparingInt(Player::getSeatIndex))
+                                                .toList();
   }
 
   public List<Player> getPlayersWithPlaceholders() {
@@ -254,4 +254,38 @@ public class GameSession {
   public void snapshotBoard() {
     this.boardState = BoardStateCodec.encode(board);
   }
+
+
+  public boolean hasValidMove(PlayerColor color) {
+    for (int i = 0; i < getBoard().getNumRows(); i++) {
+      for (int j = 0; j < getBoard().getNumColumns(); j++) {
+        // Use simulation mode (e.g., makeMove with simuMode=true) to check if the move would be valid
+        List<Piece> result = getBoard().makeMove(i, j, color, true);
+        if (!result.isEmpty()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public List<int[]> computeValidMoves(PlayerColor color) {
+    List<int[]> validMoves = new ArrayList<>();
+    for (int row = 0; row < getBoard().getNumRows(); row++) {
+      for (int col = 0; col < getBoard().getNumColumns(); col++) {
+        List<Piece> result = getBoard().makeMove(row, col, color, true);
+        if (!result.isEmpty()) {
+          validMoves.add(new int[]{row, col});
+        }
+      }
+    }
+    return validMoves;
+  }
+
+
+  public boolean isGameOver() {
+    return getBoard().getPieceCount(PlayerColor.WHITE) + getBoard().getPieceCount(PlayerColor.BLACK) == 64
+           || (!hasValidMove(PlayerColor.WHITE) && !hasValidMove(PlayerColor.BLACK));
+  }
+
 }
