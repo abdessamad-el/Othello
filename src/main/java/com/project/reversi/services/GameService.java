@@ -71,7 +71,6 @@ public class GameService {
       if(session.getCurrentPlayer() != null && !session.hasValidMove(session.getCurrentPlayer().getColor())){
          session.advanceTurn();
       }
-      session.snapshotBoard();
       computerMoveEngine.updateScores(session);
       sessionRepository.save(session);
       if (session.isGameOver()) {
@@ -81,7 +80,6 @@ public class GameService {
 
       computerMoveEngine.playAll(session);
       computerMoveEngine.updateScores(session);
-      session.snapshotBoard();
       sessionRepository.save(session);
       if (session.isGameOver()) {
         finalizeGame(session);
@@ -117,10 +115,8 @@ public class GameService {
     } else {
       session.setGameState(GameState.TIE);
     }
-    session.setFinished(true);
     session.setWhiteScore(whiteCount);
     session.setBlackScore(blackCount);
-    session.snapshotBoard();
     sessionRepository.save(session);
   }
 }

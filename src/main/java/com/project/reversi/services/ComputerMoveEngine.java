@@ -60,7 +60,6 @@ public class ComputerMoveEngine {
       return false;
     }
     LOGGER.info("Computer {} moved at ({}, {})",computerColor, move[0], move[1]);
-    session.snapshotBoard();
     updateScores(session);
     session.advanceTurn();
     // advance turn if human player has no valid moves
