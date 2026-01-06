@@ -14,7 +14,6 @@ public class GameSessionSummaryDTO {
   private List<String> playerNicknames;
   private String currentPlayerColor;
   private String currentPlayerNickname;
-  private boolean finished;
   private String gameType;
   private int whiteScore;
   private int blackScore;
@@ -68,14 +67,6 @@ public class GameSessionSummaryDTO {
 
   public void setCurrentPlayerNickname(String currentPlayerNickname) {
     this.currentPlayerNickname = currentPlayerNickname;
-  }
-
-  public boolean isFinished() {
-    return finished;
-  }
-
-  public void setFinished(boolean finished) {
-    this.finished = finished;
   }
 
   public String getGameType() {
@@ -134,7 +125,6 @@ public class GameSessionSummaryDTO {
                                                           ? "BLACK"
                                                           : "WHITE" : "N/A");
     summary.setCurrentPlayerNickname(resolveNickname(currentPlayer));
-    summary.setFinished(session.isFinished());
     summary.setGameType(session.getGameType().name());
     summary.setGameState(session.getGameState().name());
     summary.setWhiteScore(session.getWhiteScore());

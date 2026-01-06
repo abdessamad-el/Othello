@@ -58,11 +58,7 @@ public class SecurityConfig {
                 websocketEndpoint, websocketEndpoint + "/**").permitAll()
             .antMatchers("/api/auth/**").permitAll()
             .antMatchers("/h2-console/**").permitAll()
-            .antMatchers(HttpMethod.POST, "/api/session/create").permitAll()
-            .antMatchers(HttpMethod.GET, "/api/game/board").permitAll()
-            .antMatchers(HttpMethod.GET, "/api/session/**").permitAll()
-            .antMatchers("/api/game/possible-moves").permitAll()
-            .antMatchers("/api/game/move").permitAll()
+            .antMatchers("/api/v1/sessions/**").permitAll()
             .anyRequest().authenticated())
         .formLogin(form -> form
       .successHandler((request, response, authentication) -> {

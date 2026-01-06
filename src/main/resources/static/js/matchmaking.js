@@ -60,7 +60,7 @@
       type: "MATCHMAKING_ENQUEUE",
       payload: { preferredColor }
     };
-    window.Auth.authFetch('/api/matchmaking/enqueue', {
+    window.Auth.authFetch('/api/v1/matches/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -110,7 +110,7 @@
   }
 
   function fetchMatchmakingStatus(ticketId) {
-    fetch(`/api/matchmaking/${ticketId}`)
+    fetch(`/api/v1/matches/${ticketId}`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Status request failed: ${response.status}`);
@@ -176,7 +176,7 @@
       overlay.classList.add("hidden");
       return;
     }
-    fetch(`/api/matchmaking/cancel/${Reversi.state.matchmakingTicketId}`, {
+    fetch(`/api/v1/matches/${Reversi.state.matchmakingTicketId}`, {
       method: 'DELETE'
     })
       .catch(error => console.error("Error cancelling matchmaking", error))

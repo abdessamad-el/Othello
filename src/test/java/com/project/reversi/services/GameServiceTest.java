@@ -1,11 +1,21 @@
 package com.project.reversi.services;
 
-import com.project.reversi.model.*;
+import com.project.reversi.model.Board;
+import com.project.reversi.model.GameSession;
+import com.project.reversi.model.GameState;
+import com.project.reversi.model.GameType;
+import com.project.reversi.model.MoveResult;
+import com.project.reversi.model.Piece;
+import com.project.reversi.model.Player;
+import com.project.reversi.model.PlayerColor;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,13 +26,13 @@ public class GameServiceTest {
   @Autowired
   private JpaGameSessionRepository repository;
 
+
   private GameService gameService;
   private GameSessionService gameSessionService;
-  private ComputerMoveEngine computerMoveEngine;
 
   @BeforeEach
   void setup() {
-    computerMoveEngine = new ComputerMoveEngine();
+    ComputerMoveEngine computerMoveEngine = new ComputerMoveEngine(null);
     gameService = new GameService(repository, computerMoveEngine);
     gameSessionService = new GameSessionService(repository);
   }
@@ -31,6 +41,7 @@ public class GameServiceTest {
   void gameFinishedWhenBoardIsOver() {
     Board board = new FakeBoardGameOver();
     GameSession session = new GameSession(board, new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
+    session.setGameState(GameState.BLACK_WINS);
     repository.save(session);
 
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, PlayerColor.WHITE);
@@ -96,6 +107,7 @@ public class GameServiceTest {
   void gameFinishedWhiteWins() {
     Board board = new FakeBoardGameOverWhiteWins();
     GameSession session = new GameSession(board, new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
+    session.setGameState(GameState.WHITE_WINS);
     repository.save(session);
 
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, PlayerColor.WHITE);
@@ -112,8 +124,8 @@ public class GameServiceTest {
   void gameFinishedTie() {
     Board board = new FakeBoardGameOverTie();
     GameSession session = new GameSession(board, new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
+    session.setGameState(GameState.TIE);
     repository.save(session);
-
     MoveResult result = gameService.makeMove(session.getSessionId(), 0, 0, PlayerColor.WHITE);
     assertEquals(MoveResult.GAME_FINISHED, result);
 
@@ -130,9 +142,7 @@ public class GameServiceTest {
   static class FakeBoardGameOver extends Board {
     FakeBoardGameOver() { super(8, 8); }
     @Override
-    public boolean isGameOver() { return true; }
-    @Override
-    public boolean hasValidMove(PlayerColor color) { return false; }
+    public boolean makeMove(int row, int column, PlayerColor color) { return false; }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 4 : 6; }
   }
@@ -143,11 +153,13 @@ public class GameServiceTest {
   static class FakeBoardInvalidMove extends Board {
     FakeBoardInvalidMove() { super(8, 8); }
     @Override
-    public boolean hasValidMove(PlayerColor color) { return true; }
+    public boolean makeMove(int row, int column, PlayerColor color) {
+      return false;
+    }
     @Override
-    public boolean makeMove(int row, int column, PlayerColor color, boolean simuMode) { return false; }
-    @Override
-    public boolean isGameOver() { return false; }
+    public List<Piece> computeFlips(int row,int col,PlayerColor color){
+      return Collections.singletonList(new Piece(PlayerColor.WHITE));
+    }
     @Override
     public int getPieceCount(PlayerColor color) { return 2; }
   }
@@ -158,11 +170,7 @@ public class GameServiceTest {
   static class FakeBoardValidMove extends Board {
     FakeBoardValidMove() { super(8, 8); }
     @Override
-    public boolean hasValidMove(PlayerColor color) { return true; }
-    @Override
-    public boolean makeMove(int row, int column, PlayerColor color, boolean simuMode) { return true; }
-    @Override
-    public boolean isGameOver() { return false; }
+    public boolean makeMove(int row, int column, PlayerColor color) { return true; }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 5 : 4; }
   }
@@ -173,11 +181,13 @@ public class GameServiceTest {
   static class FakeBoardNextPlayerNoMoves extends Board {
     FakeBoardNextPlayerNoMoves() { super(8, 8); }
     @Override
-    public boolean hasValidMove(PlayerColor color) { return PlayerColor.WHITE == color; }
-    @Override
-    public boolean makeMove(int row, int column, PlayerColor color, boolean simuMode) { return true; }
-    @Override
-    public boolean isGameOver() { return false; }
+    public List<Piece> computeFlips(int row, int column, PlayerColor color) {
+
+        if(color == PlayerColor.WHITE){
+          return Collections.singletonList(new Piece(PlayerColor.BLACK));
+        }
+        return Collections.emptyList();
+    }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 5 : 4; }
   }
@@ -188,9 +198,7 @@ public class GameServiceTest {
   static class FakeBoardGameOverWhiteWins extends Board {
     FakeBoardGameOverWhiteWins() { super(8, 8); }
     @Override
-    public boolean isGameOver() { return true; }
-    @Override
-    public boolean hasValidMove(PlayerColor color) { return false; }
+    public boolean makeMove(int row, int column, PlayerColor color) { return false; }
     @Override
     public int getPieceCount(PlayerColor color) { return color == PlayerColor.WHITE ? 7 : 2; }
   }
@@ -201,9 +209,7 @@ public class GameServiceTest {
   static class FakeBoardGameOverTie extends Board {
     FakeBoardGameOverTie() { super(8, 8); }
     @Override
-    public boolean isGameOver() { return true; }
-    @Override
-    public boolean hasValidMove(PlayerColor color) { return false; }
+    public boolean makeMove(int row, int column, PlayerColor color) { return false; }
     @Override
     public int getPieceCount(PlayerColor color) { return 5; }
   }

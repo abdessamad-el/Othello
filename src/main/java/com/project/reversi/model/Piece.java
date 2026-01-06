@@ -1,22 +1,13 @@
 package com.project.reversi.model;
 
-import com.project.reversi.model.Cell;
 
-public class Piece extends Cell {
+public class Piece {
   private PlayerColor color;
 
 
-  public Piece(int row, int column, PlayerColor color) {
-    super(row, column);
+  public Piece(PlayerColor color) {
     this.color = color;
   }
-
-
-  @Override
-  public void printCell() {
-    System.out.print(color == PlayerColor.WHITE ? "W" : "B");
-  }
-
 
   public String toString() {
     return color == PlayerColor.WHITE ? "W" : "B";

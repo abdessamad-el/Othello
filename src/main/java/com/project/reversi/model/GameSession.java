@@ -1,14 +1,34 @@
 package com.project.reversi.model;
 
-import javax.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
+import javax.persistence.PreUpdate;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import static com.project.reversi.model.PlayerColor.BLACK;
+import static com.project.reversi.model.PlayerColor.WHITE;
+
 @Entity
 @Table(name = "game_session")
+@EntityListeners(AuditingEntityListener.class)
 public class GameSession {
 
   @Id
@@ -20,24 +40,26 @@ public class GameSession {
   @Enumerated(EnumType.STRING)
   private GameState gameState;    // The state of the game
 
-  private LocalDateTime createdAt;// Timestamp of session creation
+
+  @CreatedDate
+  private LocalDateTime createdAt; // Timestamp of session creation
+
+  @LastModifiedDate
   private LocalDateTime lastModifiedAt;
 
-  private boolean finished;       // Whether the session is finished
   private int currentTurnIndex;   // Index (0 or 1) for current player's turn
   private int whiteScore;         // piece count for white
   private int blackScore;         // piece count for black
 
 
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<Player> players = new ArrayList<>();   // Two players; for PVP, second can join later; for PVC, computer is auto-added.
+  private List<Player> players;   // Two players; for PVP, second can join later; for PVC, computer is auto-added.
 
   @Transient
-  private Board board;            // The game board
-
-  @Lob
-  @Column(name = "board_state")
-  private String boardState;      // JSON representation
+  private Board board;
+  // The game board
+  @Column(name = "board_state", columnDefinition = "TEXT")
+  private String boardState;
 
   @Version
   private Integer version;
@@ -50,15 +72,11 @@ public class GameSession {
   public GameSession(Board board, Player creator, GameType gameType) {
     this.sessionId = UUID.randomUUID().toString();
     this.gameType = gameType;
-    this.createdAt = LocalDateTime.now();
-    this.lastModifiedAt = this.createdAt;
-    this.finished = false;
     this.currentTurnIndex = 0;
     this.board = board;
-    snapshotBoard();
-
+    this.boardState = BoardStateCodec.encode(board);
     this.players = new ArrayList<>(2);
-    
+
     // Add the creator as Player 1 (seat 0).
     creator.setSeatIndex(0);
     creator.setSession(this);
@@ -66,14 +84,14 @@ public class GameSession {
 
     if (gameType == GameType.PLAYER_VS_COMPUTER) {
       // Automatically create a computer player with the opposite color.
-      PlayerColor computerColor = creator.getColor() == PlayerColor.WHITE ? PlayerColor.BLACK : PlayerColor.WHITE;
+      PlayerColor computerColor = creator.getColor().opposite();
       Player computerPlayer = new Player(computerColor, true, "Computer", 1);
       computerPlayer.setSession(this);
       this.players.add(computerPlayer);
     }
     this.gameState = GameState.IN_PROGRESS;
-    this.whiteScore = board.getPieceCount(PlayerColor.WHITE);
-    this.blackScore = board.getPieceCount(PlayerColor.BLACK);
+    this.whiteScore = board.getPieceCount(WHITE);
+    this.blackScore = board.getPieceCount(BLACK);
   }
 
   protected GameSession() {
@@ -85,24 +103,13 @@ public class GameSession {
   }
 
   public Board getBoard() {
-    if (board == null && boardState != null) {
-      board = BoardStateCodec.decode(boardState);
-      if (board == null) {
-        board = new Board(8, 8);
-      }
-    }
     return board;
-  }
-
-  public void setBoard(Board board) {
-    this.board = board;
-    snapshotBoard();
   }
 
   public List<Player> getPlayers() {
     return players == null ? List.of() : players.stream()
-                                                   .sorted(Comparator.comparingInt(Player::getSeatIndex))
-                                                   .toList();
+                                                .sorted(Comparator.comparingInt(Player::getSeatIndex))
+                                                .toList();
   }
 
   public List<Player> getPlayersWithPlaceholders() {
@@ -123,41 +130,12 @@ public class GameSession {
     return gameType;
   }
 
-  public LocalDateTime getCreatedAt() {
-    return createdAt;
-  }
-
-  public LocalDateTime getLastModifiedAt() {
-    return lastModifiedAt;
-  }
-
-  public Integer getVersion() {
-    return version;
-  }
-
-  public String getBoardState() {
-    return boardState;
-  }
-
-  public void setBoardState(String boardState) {
-    this.boardState = boardState;
-    this.board = BoardStateCodec.decode(boardState);
-  }
-
   public boolean isFinished() {
-    return finished;
-  }
-
-  public void setFinished(boolean finished) {
-    this.finished = finished;
+    return gameState != GameState.IN_PROGRESS;
   }
 
   public int getCurrentTurnIndex() {
     return currentTurnIndex;
-  }
-
-  public void setCurrentTurnIndex(int currentTurnIndex) {
-    this.currentTurnIndex = currentTurnIndex;
   }
 
   // Returns the player whose turn it is.
@@ -214,14 +192,6 @@ public class GameSession {
     players.add(player);
   }
 
-  // Returns true if the session is ready to start (i.e., has two non-null players).
-  public boolean isReady() {
-    if (gameType == GameType.PLAYER_VS_COMPUTER) {
-      return true;
-    }
-    return getPlayerAtSeat(0) != null && getPlayerAtSeat(1) != null;
-  }
-
   @Override
   public String toString() {
     return "GameSession{" +
@@ -230,28 +200,73 @@ public class GameSession {
            ", players=" + players +
            ", gameType=" + gameType +
            ", createdAt=" + createdAt +
-           ", finished=" + finished +
            ", currentTurnIndex=" + currentTurnIndex +
            '}';
   }
 
-  @PrePersist
-  protected void onCreate() {
-    if (createdAt == null) {
-      createdAt = LocalDateTime.now();
-    }
-    lastModifiedAt = LocalDateTime.now();
-    snapshotBoard();
-  }
-
   @PreUpdate
   protected void onUpdate() {
-    lastModifiedAt = LocalDateTime.now();
-    snapshotBoard();
-  }
-
-
-  public void snapshotBoard() {
     this.boardState = BoardStateCodec.encode(board);
   }
+
+  @PostLoad
+  protected void postLoad() {
+    board = BoardStateCodec.decode(boardState);
+  }
+
+  public boolean hasValidMove(PlayerColor color) {
+    return !computeValidMoves(color).isEmpty();
+  }
+
+  public List<Position> computeValidMoves(PlayerColor color) {
+    List<Position> validMoves = new ArrayList<>();
+    for (int row = 0; row < getBoard().getNumRows(); row++) {
+      for (int col = 0; col < getBoard().getNumColumns(); col++) {
+        List<Piece> result = getBoard().computeFlips(row, col, color);
+        if (!result.isEmpty()) {
+          validMoves.add(new Position(row,col));
+        }
+      }
+    }
+    return validMoves;
+  }
+
+
+  public boolean isGameOver() {
+    int occupied = board.getPieceCount(WHITE) + board.getPieceCount(BLACK);
+    int total = board.getNumRows() * board.getNumColumns();
+    return occupied == total || (!hasValidMove(WHITE) && !hasValidMove(BLACK));
+  }
+
+
+  /**
+   * Finalizes the game: sets the game state
+   */
+  public void finish() {
+    if (isFinished()) return;
+    updateScores();
+    if (whiteScore > blackScore) {
+      gameState = GameState.WHITE_WINS;
+    } else if (blackScore > whiteScore) {
+      gameState = GameState.BLACK_WINS;
+    } else {
+      gameState = GameState.TIE;
+    }
+  }
+  /**
+   * Updates scores
+   */
+  public void updateScores() {
+    this.blackScore = board.getPieceCount(PlayerColor.BLACK);
+    this.whiteScore = board.getPieceCount(PlayerColor.WHITE);
+  }
+
+  public void advanceTurnWithPass() {
+    advanceTurn(); // switch to next player
+    if (getCurrentPlayer() != null && !hasValidMove(getCurrentPlayer().getColor())) {
+      advanceTurn(); // pass
+    }
+  }
+
+
 }

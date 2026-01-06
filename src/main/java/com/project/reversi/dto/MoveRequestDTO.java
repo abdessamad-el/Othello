@@ -6,7 +6,6 @@ public class MoveRequestDTO {
   private int row;
   private int column;
   private PlayerColor color;
-  private String sessionId;
 
 
   public int getRow() {
@@ -33,12 +32,5 @@ public class MoveRequestDTO {
     this.color = color;
   }
 
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
 }
 
