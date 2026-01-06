@@ -1,23 +1,22 @@
 package com.project.reversi.services;
 
 import com.project.reversi.model.GameSession;
-import com.project.reversi.model.Piece;
 import com.project.reversi.model.Player;
 import com.project.reversi.model.PlayerColor;
+import com.project.reversi.model.Position;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class ComputerMoveEngine {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ComputerMoveEngine.class);
 
-  @Autowired
-  private ComputerStrategy strategy;
+
+  private final ComputerStrategy strategy;
+
+  public ComputerMoveEngine(ComputerStrategy strategy) {this.strategy = strategy;}
 
 
   /**
@@ -48,18 +47,18 @@ public class ComputerMoveEngine {
       return true;
     }
     
-    int[] move = strategy.execute(session,computerColor);
-    if (move[0] == -1 && move[1] == -1){
+    Position move = strategy.execute(session, computerColor);
+    if (move.row() == -1 && move.col() == -1){
       LOGGER.info("Computer has no valid moves; passing turn.");
       session.advanceTurn();
       return true;
     }
-    List<Piece> result = session.getBoard().makeMove(move[0], move[1], computerColor, false);
-    if(result.isEmpty()){
-      LOGGER.error("Computer strategy returned an invalid move at ({}, {})", move[0], move[1]);
+    boolean result = session.getBoard().makeMove(move.row(), move.col(), computerColor);
+    if(!result){
+      LOGGER.error("Computer strategy returned an invalid move at ({}, {})", move.row(), move.col());
       return false;
     }
-    LOGGER.info("Computer {} moved at ({}, {})",computerColor, move[0], move[1]);
+    LOGGER.info("Computer {} moved at ({}, {})",computerColor, move.row(), move.col());
     updateScores(session);
     session.advanceTurn();
     // advance turn if human player has no valid moves

@@ -99,7 +99,7 @@ public class Board {
     return row < 0 || row >= numRows || column < 0 || column >= numColumns;
   }
 
-  public List<Piece> makeMove(final int row, final int column, final PlayerColor color, boolean simuMode) {
+  public List<Piece> computeFlips(final int row, final int column, final PlayerColor color) {
     List<Piece> flippedPieces = new ArrayList<>();
     // Check if the move is out-of-bounds or the cell is already occupied.
     if (isOutOfBounds(row, column) || board[row][column] != null) {
@@ -131,16 +131,27 @@ public class Board {
       flippedPieces.addAll(flips);
     }
 
-    if (simuMode || flippedPieces.isEmpty()) {
-      return flippedPieces;
-    }
-    for (Piece piece : flippedPieces) {
-      piece.flip();
-    }
-    board[row][column] = new Piece(color);
-    updateScore(color, flippedPieces.size() + 1);
     return flippedPieces;
 
+  }
+
+  public void applyMove(int row, int col, PlayerColor color, List<Piece> flips) {
+    placePiece(row, col, color);
+    flips.forEach(Piece::flip);
+    updateScore(color, flips.size() + 1);
+  }
+
+  public boolean makeMove(int row,int col,PlayerColor color){
+     List<Piece> flips = computeFlips(row,col,color);
+     if(flips.isEmpty()){
+       return false;
+     }
+     applyMove(row,col,color,flips);
+     return true;
+  }
+
+  private void placePiece(int row, int col, PlayerColor color) {
+    board[row][col] = new Piece(color);
   }
 
 

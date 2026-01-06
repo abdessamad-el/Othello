@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/matchmaking")
+@RequestMapping("/api/v1/matches")
 public class MatchMakingController {
 
   private final MatchMakingService matchMakingService;
@@ -59,7 +59,7 @@ public class MatchMakingController {
     return ResponseEntity.ok(currentUser);
   }
 
-  @PostMapping("/enqueue")
+  @PostMapping("/")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UUID> enqueue(@RequestBody EnqueueRequestDTO enqueueRequest,
                                       @AuthenticationPrincipal User currentUser) {
@@ -70,7 +70,7 @@ public class MatchMakingController {
     return ResponseEntity.created(null).body(ticketId);
   }
 
-  @DeleteMapping("/cancel/{ticketId}")
+  @DeleteMapping("/{ticketId}")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> cancel(@PathVariable UUID ticketId) {
     boolean canceled = matchMakingService.cancel(ticketId);

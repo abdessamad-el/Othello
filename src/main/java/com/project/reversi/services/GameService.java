@@ -63,8 +63,8 @@ public class GameService {
       return MoveResult.WRONG_TURN;
     }
     // Attempt the move on the board
-    List<Piece> moveResult = session.getBoard().makeMove(row, column, playerColor, false);
-    if (!moveResult.isEmpty()) {
+    boolean moveResult = session.getBoard().makeMove(row, column, playerColor);
+    if (moveResult) {
       logger.info("Player {} moved at ({}, {})", playerColor, row, column);
       session.advanceTurn();
       // advance turn if next player has no valid moves

@@ -212,25 +212,16 @@ public class GameSession {
   }
 
   public boolean hasValidMove(PlayerColor color) {
-    for (int i = 0; i < getBoard().getNumRows(); i++) {
-      for (int j = 0; j < getBoard().getNumColumns(); j++) {
-        // Use simulation mode (e.g., makeMove with simuMode=true) to check if the move would be valid
-        List<Piece> result = getBoard().makeMove(i, j, color, true);
-        if (!result.isEmpty()) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return !computeValidMoves(color).isEmpty();
   }
 
-  public List<int[]> computeValidMoves(PlayerColor color) {
-    List<int[]> validMoves = new ArrayList<>();
+  public List<Position> computeValidMoves(PlayerColor color) {
+    List<Position> validMoves = new ArrayList<>();
     for (int row = 0; row < getBoard().getNumRows(); row++) {
       for (int col = 0; col < getBoard().getNumColumns(); col++) {
-        List<Piece> result = getBoard().makeMove(row, col, color, true);
+        List<Piece> result = getBoard().computeFlips(row, col, color);
         if (!result.isEmpty()) {
-          validMoves.add(new int[]{row, col});
+          validMoves.add(new Position(row,col));
         }
       }
     }

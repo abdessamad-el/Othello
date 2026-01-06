@@ -7,7 +7,8 @@
     const { overlay } = Reversi.elements;
     console.log("startGame called with:", gameType);
     overlay.classList.add("hidden");
-    const url = `/api/session/create?gameType=${gameType}&color=WHITE`;
+    const url = `/api/v1/sessions?gameType=${gameType}&color=WHITE`;
+    console.log(url);
     const requiresAuth = gameType === "PLAYER_VS_PLAYER";
     const pendingAction = requiresAuth ? { type: "SESSION_CREATE", payload: { gameType } } : null;
     const request = window.Auth.authFetch(url, { method: "POST" }, pendingAction);
@@ -46,7 +47,7 @@
       type: "SESSION_JOIN",
       payload: { sessionId: targetSessionId }
     };
-    window.Auth.authFetch(`/api/session/${targetSessionId}/join`, { method: "POST" }, pendingAction)
+    window.Auth.authFetch(`/api/v1/sessions/${targetSessionId}/join`, { method: "POST" }, pendingAction)
       .then(res => res.json())
       .then(data => {
         console.log("Joined Game:", data);
@@ -184,7 +185,7 @@
 
   function makeMove(sessionId, row, col, color) {
     console.log(`makeMove called with sessionId: ${sessionId}, row: ${row}, col: ${col}, color: ${color}`);
-    fetch('/api/game/move', {
+    fetch(`/api/v1/sessions/${sessionId}/moves`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -211,15 +212,11 @@
   }
 
   function fetchPossibleMoves(sessionId, color) {
-    return fetch('/api/game/possible-moves', {
-      method: 'POST',
+    return fetch(`/api/v1/sessions/${sessionId}/possible-moves?color=${color}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sessionId: sessionId,
-        color: color
-      })
+      }
     })
       .then(response => {
         if (!response.ok) {

@@ -6,6 +6,7 @@ import com.project.reversi.model.GameType;
 import com.project.reversi.model.Piece;
 import com.project.reversi.model.Player;
 import com.project.reversi.model.PlayerColor;
+import com.project.reversi.model.Position;
 import org.springframework.data.util.Pair;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
   }
 
   @Override
-  public int[] execute(GameSession session, PlayerColor computerColor) {
+  public Position execute(GameSession session, PlayerColor computerColor) {
 
     Board copyBoard = session.getBoard().copyBoard();
     GameSession copySession = new GameSession(copyBoard,new Player(computerColor.opposite()), GameType.PLAYER_VS_COMPUTER);
@@ -32,47 +33,53 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
   }
 
 
-  public Pair<Integer,int[]> minMaxAlphaBeta(GameSession game , int depth, int alpha, int beta, PlayerColor computerColor, boolean isComputer){
+  public Pair<Integer,Position> minMaxAlphaBeta(GameSession game , int depth, int alpha, int beta, PlayerColor computerColor, boolean isComputer){
 
     Board board = game.getBoard();
     if(game.isGameOver() || depth == 0) {
-      return Pair.of(evalFunction(game,computerColor),new int[]{-1,-1});
+      return Pair.of(evalFunction(game,computerColor),new Position(-1,-1));
     }
     if (isComputer){
-      List<int[]> validMoves = game.computeValidMoves(computerColor);
+      List<Position> validMoves = game.computeValidMoves(computerColor);
       int[] bestMove = new int[]{-1, -1};
 
       if(validMoves.isEmpty()){
-        Pair<Integer, int[]> passResult = minMaxAlphaBeta(game, depth, alpha, beta, computerColor, false);
-        return Pair.of(passResult.getFirst(), new int[]{-1, -1});
+        Pair<Integer, Position> passResult = minMaxAlphaBeta(game, depth, alpha, beta, computerColor, false);
+        return Pair.of(passResult.getFirst(), new Position(-1, -1));
       }
-      for(int[] move : validMoves) {
-        List<Piece> cellsCaptured = board.makeMove(move[0],move[1],computerColor,false);
+      for(Position move : validMoves) {
+        List<Piece> cellsCaptured = board.computeFlips(move.row(),move.col(),computerColor);
+        if(!cellsCaptured.isEmpty()){
+          board.applyMove(move.row(),move.col(),computerColor,cellsCaptured);
+        }
         var score = minMaxAlphaBeta(game,depth - 1,alpha,beta,computerColor,false);
-        board.undoMove(move[0],move[1],computerColor,cellsCaptured);
+        board.undoMove(move.row(),move.col(),computerColor,cellsCaptured);
         if(score.getFirst() >= alpha){
           alpha = score.getFirst();
-          bestMove[0] = move[0];
-          bestMove[1] = move[1];
+          bestMove[0] = move.row();
+          bestMove[1] = move.col();
           if(alpha >= beta) {
             break;
           }
         }
       }
-      return Pair.of(alpha,bestMove);
+      return Pair.of(alpha,new Position(bestMove[0],bestMove[1]));
     }
     else {
       PlayerColor oppositeColor = computerColor.opposite();
-      List<int[]> validMoves = game.computeValidMoves(oppositeColor);
+      List<Position> validMoves = game.computeValidMoves(oppositeColor);
 
       if(validMoves.isEmpty()){
-        Pair<Integer, int[]> passResult = minMaxAlphaBeta(game, depth, alpha, beta, computerColor, true);
-        return Pair.of(passResult.getFirst(), new int[]{-1, -1});
+        Pair<Integer, Position> passResult = minMaxAlphaBeta(game, depth, alpha, beta, computerColor, true);
+        return Pair.of(passResult.getFirst(), new Position(-1, -1));
       }
-      for(int[] move : validMoves){
-        List<Piece> cellsCaptured = board.makeMove(move[0],move[1],oppositeColor,false);
+      for(Position move : validMoves){
+        List<Piece> cellsCaptured = board.computeFlips(move.row(),move.col(),computerColor);
+        if(!cellsCaptured.isEmpty()){
+          board.applyMove(move.row(),move.col(),computerColor,cellsCaptured);
+        }
         var score = minMaxAlphaBeta(game,depth - 1,alpha,beta,computerColor,true);
-        board.undoMove(move[0],move[1],oppositeColor,cellsCaptured);
+        board.undoMove(move.row(),move.col(),oppositeColor,cellsCaptured);
         if(score.getFirst() <= beta) {
           beta = score.getFirst();
           if(alpha >= beta){
@@ -80,16 +87,9 @@ public class MinMaxAlphaBetaStrat implements ComputerStrategy {
           }
         }
       }
-      return Pair.of(beta,new int[]{-1,-1});
+      return Pair.of(beta,new Position(-1,-1));
     }
   }
-  
-  /* 
-  public int evalFunction(Board board ,PlayerColor computerColor){
-    return board.getPieceCount(computerColor) - board.getPieceCount(board.getOppositeColor(computerColor));
-  }
-  */
-
   // 8x8 Reversi positional weights (corners high, X/C squares negative)
 private static final int[][] POSITION_WEIGHTS = {
     {100, -20, 10, 5, 5, 10, -20, 100},

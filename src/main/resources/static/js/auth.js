@@ -57,7 +57,7 @@
   }
 
   function requireAuth(pendingAction, onSuccess) {
-    authFetch("/api/matchmaking/auth-check", { method: "GET" }, pendingAction)
+    authFetch("/api/v1/matches/auth-check", { method: "GET" }, pendingAction)
       .then(response => response.json())
       .then(user => {
         if (user && user.username) {

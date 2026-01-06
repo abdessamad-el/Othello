@@ -58,7 +58,7 @@ class MatchMakingControllerTest {
   }
 
   @Test
-  @DisplayName("GET /api/matchmaking/{ticketId} returns waiting status")
+  @DisplayName("GET /api/v1/matches/{ticketId} returns waiting status")
   void getMatchStatusWaiting() throws Exception {
     authenticateTestUser();
     UUID ticketId = UUID.randomUUID();
@@ -66,23 +66,23 @@ class MatchMakingControllerTest {
     Mockito.when(matchMakingService.getSessionByTicketId(ticketId)).thenReturn(Optional.empty());
     Mockito.when(matchMakingService.getAssignedColor(ticketId)).thenReturn(Optional.empty());
 
-    mockMvc.perform(get("/api/matchmaking/" + ticketId))
+    mockMvc.perform(get("/api/v1/matches/" + ticketId))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.status", is("WAITING")))
            .andExpect(jsonPath("$.assignedColor", nullValue()));
   }
 
   @Test
-  @DisplayName("GET /api/matchmaking/auth-check returns OK for authenticated user")
+  @DisplayName("GET /api/v1/matches/auth-check returns OK for authenticated user")
   void authCheckReturnsOk() throws Exception {
     authenticateTestUser();
 
-    mockMvc.perform(get("/api/matchmaking/auth-check"))
+    mockMvc.perform(get("/api/v1/matches/auth-check"))
         .andExpect(status().isOk());
   }
 
   @Test
-  @DisplayName("GET /api/matchmaking/{ticketId} returns session summary when found")
+  @DisplayName("GET /api/v1/matches/{ticketId} returns session summary when found")
   void getMatchStatusFound() throws Exception {
     UUID ticketId = UUID.randomUUID();
     GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE, "Alice"), GameType.PLAYER_VS_PLAYER);
@@ -92,7 +92,7 @@ class MatchMakingControllerTest {
     Mockito.when(matchMakingService.getSessionByTicketId(ticketId)).thenReturn(Optional.of(session));
     Mockito.when(matchMakingService.getAssignedColor(ticketId)).thenReturn(Optional.of(PlayerColor.WHITE));
 
-    mockMvc.perform(get("/api/matchmaking/" + ticketId))
+    mockMvc.perform(get("/api/v1/matches/" + ticketId))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.status", is("FOUND")))
            .andExpect(jsonPath("$.gameSession.sessionId", is(session.getSessionId())))
@@ -102,17 +102,17 @@ class MatchMakingControllerTest {
   }
 
   @Test
-  @DisplayName("GET /api/matchmaking/{ticketId} returns 404 when ticket missing")
+  @DisplayName("GET /api/matches/{ticketId} returns 404 when ticket missing")
   void getMatchStatusNotFound() throws Exception {
     UUID ticketId = UUID.randomUUID();
     Mockito.when(matchMakingService.getStatus(ticketId)).thenReturn(null);
 
-    mockMvc.perform(get("/api/matchmaking/" + ticketId))
+    mockMvc.perform(get("/api/matches/" + ticketId))
            .andExpect(status().isNotFound());
   }
 
   @Test
-  @DisplayName("POST /api/matchmaking/enqueue returns ticket id")
+  @DisplayName("POST /api/v1/matches returns ticket id")
   void enqueueReturnsTicketId() throws Exception {
     User user = authenticateTestUser();
     UUID ticketId = UUID.randomUUID();
@@ -120,7 +120,7 @@ class MatchMakingControllerTest {
 
     Mockito.when(matchMakingService.enqueue(user, request.preferredColor())).thenReturn(ticketId);
 
-    mockMvc.perform(post("/api/matchmaking/enqueue")
+    mockMvc.perform(post("/api/v1/matches/")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsBytes(request)))
            .andExpect(status().isCreated())
@@ -128,22 +128,22 @@ class MatchMakingControllerTest {
   }
 
   @Test
-  @DisplayName("DELETE /api/matchmaking/cancel/{ticketId} cancels ticket")
+  @DisplayName("DELETE /api/v1/matches/{ticketId} cancels ticket")
   void cancelTicket() throws Exception {
     UUID ticketId = UUID.randomUUID();
     Mockito.when(matchMakingService.cancel(ticketId)).thenReturn(true);
 
-    mockMvc.perform(delete("/api/matchmaking/cancel/" + ticketId))
+    mockMvc.perform(delete("/api/v1/matches/" + ticketId))
            .andExpect(status().isNoContent());
   }
 
   @Test
-  @DisplayName("DELETE /api/matchmaking/cancel/{ticketId} returns 404 when missing")
+  @DisplayName("DELETE /api/matches/v1/{ticketId} returns 404 when missing")
   void cancelTicketNotFound() throws Exception {
     UUID ticketId = UUID.randomUUID();
     Mockito.when(matchMakingService.cancel(ticketId)).thenReturn(false);
 
-    mockMvc.perform(delete("/api/matchmaking/cancel/" + ticketId))
+    mockMvc.perform(delete("/api/matches/v1/" + ticketId))
            .andExpect(status().isNotFound());
   }
 }
