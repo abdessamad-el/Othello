@@ -23,6 +23,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import static com.project.reversi.model.PlayerColor.BLACK;
+import static com.project.reversi.model.PlayerColor.WHITE;
+
 @Entity
 @Table(name = "game_session")
 @EntityListeners(AuditingEntityListener.class)
@@ -87,8 +90,8 @@ public class GameSession {
       this.players.add(computerPlayer);
     }
     this.gameState = GameState.IN_PROGRESS;
-    this.whiteScore = board.getPieceCount(PlayerColor.WHITE);
-    this.blackScore = board.getPieceCount(PlayerColor.BLACK);
+    this.whiteScore = board.getPieceCount(WHITE);
+    this.blackScore = board.getPieceCount(BLACK);
   }
 
   protected GameSession() {
@@ -230,8 +233,40 @@ public class GameSession {
 
 
   public boolean isGameOver() {
-    return getBoard().getPieceCount(PlayerColor.WHITE) + getBoard().getPieceCount(PlayerColor.BLACK) == 64
-           || (!hasValidMove(PlayerColor.WHITE) && !hasValidMove(PlayerColor.BLACK));
+    int occupied = board.getPieceCount(WHITE) + board.getPieceCount(BLACK);
+    int total = board.getNumRows() * board.getNumColumns();
+    return occupied == total || (!hasValidMove(WHITE) && !hasValidMove(BLACK));
   }
+
+
+  /**
+   * Finalizes the game: sets the game state
+   */
+  public void finish() {
+    if (isFinished()) return;
+    updateScores();
+    if (whiteScore > blackScore) {
+      gameState = GameState.WHITE_WINS;
+    } else if (blackScore > whiteScore) {
+      gameState = GameState.BLACK_WINS;
+    } else {
+      gameState = GameState.TIE;
+    }
+  }
+  /**
+   * Updates scores
+   */
+  public void updateScores() {
+    this.blackScore = board.getPieceCount(PlayerColor.BLACK);
+    this.whiteScore = board.getPieceCount(PlayerColor.WHITE);
+  }
+
+  public void advanceTurnWithPass() {
+    advanceTurn(); // switch to next player
+    if (getCurrentPlayer() != null && !hasValidMove(getCurrentPlayer().getColor())) {
+      advanceTurn(); // pass
+    }
+  }
+
 
 }

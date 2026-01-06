@@ -14,6 +14,6 @@ public class ReversiApplication {
 
   @Bean
   ComputerStrategy strategy(){
-    return new MinMaxAlphaBetaStrat(6);
+    return new MinMaxAlphaBetaStrat(3);
   }
 }

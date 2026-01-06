@@ -19,63 +19,43 @@ public class ComputerMoveEngine {
   public ComputerMoveEngine(ComputerStrategy strategy) {this.strategy = strategy;}
 
 
-  /**
-   * Execute computer turns until it is no longer the computer's move.
-   */
-  public void playAll(GameSession session) {
-    boolean acted;
-    do {
-      acted = playSingleTurn(session);
-    } while (acted && isComputerTurn(session));
-  }
 
-  private boolean playSingleTurn(GameSession session) {
-    if (!isComputerTurn(session)) {
-      return false;
-    }
+  public boolean playSingleTurn(GameSession session) {
 
     if(session.isFinished()){
       return false;
     }
 
+    if (!isComputerTurn(session)) {
+      return false;
+    }
     Player computer = session.getCurrentPlayer();
     PlayerColor computerColor = computer.getColor();
 
     if (!session.hasValidMove(computerColor)) {
       LOGGER.info("Computer has no valid moves; passing turn.");
-      session.advanceTurn();
+      session.advanceTurnWithPass();
       return true;
     }
     
     Position move = strategy.execute(session, computerColor);
-    if (move.row() == -1 && move.col() == -1){
+    if (move.row() == -1){
       LOGGER.info("Computer has no valid moves; passing turn.");
-      session.advanceTurn();
+      session.advanceTurnWithPass();
       return true;
     }
-    boolean result = session.getBoard().makeMove(move.row(), move.col(), computerColor);
-    if(!result){
+    if(!session.getBoard().makeMove(move.row(), move.col(), computerColor)){
       LOGGER.error("Computer strategy returned an invalid move at ({}, {})", move.row(), move.col());
-      return false;
+      throw new IllegalStateException("Computer strategy produced invalid move");
     }
     LOGGER.info("Computer {} moved at ({}, {})",computerColor, move.row(), move.col());
-    updateScores(session);
-    session.advanceTurn();
-    // advance turn if human player has no valid moves
-    if(session.getCurrentPlayer() != null && !session.hasValidMove(session.getCurrentPlayer().getColor())){
-      session.advanceTurn();
-    }
+    session.advanceTurnWithPass();
     return true;
   }
 
   private boolean isComputerTurn(GameSession session) {
     Player current = session.getCurrentPlayer();
     return current != null && current.isComputer();
-  }
-
-  public void updateScores(GameSession session) {
-    session.setBlackScore(session.getBoard().getPieceCount(PlayerColor.BLACK));
-    session.setWhiteScore(session.getBoard().getPieceCount(PlayerColor.WHITE));
   }
 }
 
