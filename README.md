@@ -3,7 +3,7 @@
 This project is a web-based implementation of the classic board game **Othello (Reversi)**. It features a Spring Boot backend with REST endpoints and a simple HTML/CSS/JavaScript frontend. The game supports **Player vs. Computer**, **Player vs. Player**, and real-time **Matchmaking** for quick pairing.
 
 <p align="center">
-  <img src="images/screenshot.png" alt="Othello App Screenshot">
+  <img src="images/othello.gif" alt="Othello App Gameplay">
 </p>
 
 
