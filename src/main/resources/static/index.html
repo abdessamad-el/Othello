@@ -14,6 +14,7 @@
     <button id="newGameBtn">New Game</button>
     <button id="joinGameBtn">Join Game</button>
     <button id="findMatchBtn">Find Match</button>
+    <button id="leaderBoardBtn">Leaderboard</button>
 </div>
 
 <!-- GAME PAGE (hidden until a session is active) -->
@@ -51,6 +52,33 @@
     </div>
 </div>
 
+<div id="leaderboardPage" class="hidden">
+    <div class="leaderboard-card">
+        <button id="leaderboardMenuBtn">Menu</button>
+        <div id="myStats" class="hidden">
+            <p><strong>Your Rank:</strong> <span id="myRank"></span></p>
+            <p><strong>Wins:</strong> <span id="myWins"></span></p>
+            <p><strong>Losses:</strong> <span id="myLosses"></span></p>
+            <p><strong>Win Rate:</strong> <span id="myWinRate"></span></p>
+        </div>
+
+        <h2>Global Leaderboard</h2>
+        <table id="leaderboardTable">
+            <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Win Rate</th>
+            </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+
+    </div>
+</div>
+
 <!-- Overlay for new game / join forms -->
 <div id="overlay" class="hidden">
     <div id="overlayContent">
@@ -66,6 +94,7 @@
 <script src="js/matchmaking.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/game.js"></script>
+<script src ="js/leaderboard.js"></script>
 <script src="js/app.js"></script>
 
 </body>
