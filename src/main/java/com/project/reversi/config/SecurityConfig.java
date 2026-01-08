@@ -4,7 +4,6 @@ import com.project.reversi.model.User;
 import com.project.reversi.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -59,6 +58,7 @@ public class SecurityConfig {
             .antMatchers("/api/auth/**").permitAll()
             .antMatchers("/h2-console/**").permitAll()
             .antMatchers("/api/v1/sessions/**").permitAll()
+            .antMatchers("/api/v1/leaderboard/**").permitAll()
             .anyRequest().authenticated())
         .formLogin(form -> form
       .successHandler((request, response, authentication) -> {
