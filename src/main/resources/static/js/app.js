@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function() {
   Reversi.elements.newGameBtn = document.getElementById("newGameBtn");
   Reversi.elements.joinGameBtn = document.getElementById("joinGameBtn");
   Reversi.elements.findMatchBtn = document.getElementById("findMatchBtn");
+  Reversi.elements.leaderBoardBtn = document.getElementById("leaderBoardBtn")
   Reversi.elements.overlay = document.getElementById("overlay");
   Reversi.elements.overlayTitle = document.getElementById("overlayTitle");
   Reversi.elements.overlayBody = document.getElementById("overlayBody");
@@ -24,7 +25,16 @@ document.addEventListener("DOMContentLoaded", function() {
   Reversi.elements.sessionIdLabel = document.getElementById("sessionIdLabel");
   Reversi.elements.copySessionIdBtn = document.getElementById("copySessionIdBtn");
   Reversi.elements.boardDiv = document.getElementById("board");
+  Reversi.elements.leaderboardPage = document.getElementById("leaderboardPage")
   Reversi.elements.gameContainer = document.getElementById("gameContainer");
+  Reversi.elements.leaderboardMenuBtn = document.getElementById("leaderboardMenuBtn");
+  Reversi.elements.leaderboardTableBody = document.getElementById("leaderboardBody");
+  Reversi.elements.myStats = document.getElementById("myStats");
+  Reversi.elements.myRank = document.getElementById("myRank");
+  Reversi.elements.myWins = document.getElementById("myWins");
+  Reversi.elements.myLosses = document.getElementById("myLosses");
+  Reversi.elements.myWinRate = document.getElementById("myWinRate");
+  Reversi.elements.leaderboardTableBody = document.getElementById("leaderboardBody");
 
   Reversi.config.WEBSOCKET_ENDPOINT = "/ws/game";
 
@@ -42,6 +52,8 @@ document.addEventListener("DOMContentLoaded", function() {
   Reversi.elements.newGameBtn.addEventListener("click", window.Menu.showNewGameOptions);
   Reversi.elements.joinGameBtn.addEventListener("click", window.Menu.showJoinGameForm);
   Reversi.elements.findMatchBtn.addEventListener("click", () => window.Matchmaking.showMatchmakingForm());
+  Reversi.elements.leaderBoardBtn.addEventListener("click",() => window.Leaderboard.showLeaderBoard())
+  Reversi.elements.leaderboardMenuBtn.addEventListener("click", () => window.Leaderboard.showMenu())
   Reversi.elements.copySessionIdBtn.addEventListener("click", window.Game.copySessionId);
   Reversi.elements.overlayCloseButton.addEventListener("click",() => Reversi.elements.overlay.classList.add("hidden"))
 

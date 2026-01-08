@@ -34,6 +34,50 @@ button {
 /* MENU PAGE (initially visible) */
 #menuPage {
   margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#menuPage button {
+  min-width: 200px;
+}
+
+/* Leaderboard page */
+#leaderboardPage {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.leaderboard-card {
+  width: min(900px, 95%);
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+#leaderboardTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+#leaderboardTable th,
+#leaderboardTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+#leaderboardTable th {
+  background-color: #f5f5f5;
+}
+
+#leaderboardTable td:nth-child(2) {
+  text-align: left;
 }
 
 /* GAME PAGE */
