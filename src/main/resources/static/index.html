@@ -13,6 +13,7 @@
 <div id="menuPage">
     <button id="newGameBtn">New Game</button>
     <button id="joinGameBtn">Join Game</button>
+    <button id="watchGameBtn">Watch Game</button>
     <button id="findMatchBtn">Find Match</button>
     <button id="leaderBoardBtn">Leaderboard</button>
 </div>
@@ -26,10 +27,12 @@
         <div id="sessionDetails" class="hidden">
             <span id="sessionIdLabel">Session ID: -</span>
             <button id="copySessionIdBtn" type="button">Copy</button>
+            <button id="copyWatchLinkBtn" type="button">Copy watch link</button>
         </div>
     </div>
     <!-- Game container wrapping scoreboard and board -->
     <div id="gameContainer" class="hidden">
+        <p id="gameStatus" role="status" aria-live="polite"></p>
         <!-- Scoreboard -->
         <div id="scores">
             <div id="blackScoreBox" class="scoreBox">
@@ -93,6 +96,7 @@
 <script src="js/auth.js"></script>
 <script src="js/matchmaking.js"></script>
 <script src="js/menu.js"></script>
+<script src="js/spectator-mode.js"></script>
 <script src="js/game.js"></script>
 <script src ="js/leaderboard.js"></script>
 <script src="js/app.js"></script>

@@ -18,6 +18,7 @@ public class GameSessionSummaryDTO {
   private int whiteScore;
   private int blackScore;
   private String gameState;
+  private String lastPassedPlayerColor;
 
   // Getters and setters
 
@@ -89,6 +90,14 @@ public class GameSessionSummaryDTO {
     return gameState;
   }
 
+  public String getLastPassedPlayerColor() {
+    return lastPassedPlayerColor;
+  }
+
+  public void setLastPassedPlayerColor(String lastPassedPlayerColor) {
+    this.lastPassedPlayerColor = lastPassedPlayerColor;
+  }
+
   public void setBlackScore(int pieceCount) {
     blackScore = pieceCount;
   }
@@ -127,6 +136,9 @@ public class GameSessionSummaryDTO {
     summary.setCurrentPlayerNickname(resolveNickname(currentPlayer));
     summary.setGameType(session.getGameType().name());
     summary.setGameState(session.getGameState().name());
+    summary.setLastPassedPlayerColor(
+        session.getLastPassedPlayerColor() == null ? null : session.getLastPassedPlayerColor().name()
+    );
     summary.setWhiteScore(session.getWhiteScore());
     summary.setBlackScore(session.getBlackScore());
     return summary;

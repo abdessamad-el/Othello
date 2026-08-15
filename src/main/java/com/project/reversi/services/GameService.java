@@ -1,13 +1,18 @@
 package com.project.reversi.services;
 
 import com.project.reversi.model.GameSession;
+import com.project.reversi.model.GameType;
 import com.project.reversi.model.MoveResult;
 import com.project.reversi.model.Player;
 import com.project.reversi.model.PlayerColor;
+import com.project.reversi.model.User;
 import com.project.reversi.repository.JpaGameSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.NoSuchElementException;
 
@@ -32,12 +37,58 @@ public class GameService {
    * @param row         The row for the move.
    * @param column      The column for the move.
    * @param playerColor The color of the player making the move.
-   * @return The resut of the move
+   * @return The result of the move
    */
-  public MoveResult makeMove(String sessionId, int row, int column, PlayerColor playerColor) {
+  MoveResult makeMove(String sessionId, int row, int column, PlayerColor playerColor) {
     GameSession session = sessionRepository.findById(sessionId)
                                            .orElseThrow(() -> new NoSuchElementException("Session not found: "
                                                                                          + sessionId));
+    return makeMove(session, row, column, playerColor);
+  }
+
+  @Transactional
+  public MoveResult makeMove(
+      String sessionId,
+      int row,
+      int column,
+      PlayerColor playerColor,
+      User currentUser
+  ) {
+    GameSession session = sessionRepository.findById(sessionId)
+                                           .orElseThrow(() -> new NoSuchElementException("Session not found: "
+                                                                                         + sessionId));
+    authorizePvpMove(session, playerColor, currentUser);
+    return makeMove(session, row, column, playerColor);
+  }
+
+  private void authorizePvpMove(GameSession session, PlayerColor playerColor, User currentUser) {
+    if (session.getGameType() != GameType.PLAYER_VS_PLAYER) {
+      return;
+    }
+    if (currentUser == null) {
+      throw new AuthenticationCredentialsNotFoundException("Authentication is required for PVP moves");
+    }
+    boolean ownsColor = session.getPlayers().stream()
+                               .filter(player -> player.getColor() == playerColor)
+                               .map(Player::getAccount)
+                               .anyMatch(account -> sameUser(account, currentUser));
+    if (!ownsColor) {
+      throw new AccessDeniedException("Player does not own the requested color");
+    }
+  }
+
+  private boolean sameUser(User account, User currentUser) {
+    if (account == null) {
+      return false;
+    }
+    if (account.getId() != null && currentUser.getId() != null) {
+      return account.getId().equals(currentUser.getId());
+    }
+    return account.getUsername().equals(currentUser.getUsername());
+  }
+
+  private MoveResult makeMove(GameSession session, int row, int column, PlayerColor playerColor) {
+    String sessionId = session.getSessionId();
     if (session.isFinished()) {
       logger.warn("Attempted move on finished session: {}", sessionId);
       return MoveResult.GAME_FINISHED;
@@ -71,6 +122,7 @@ public class GameService {
 
     if (session.isGameOver()) {
       session.finish();
+      sessionRepository.save(session);
       return MoveResult.GAME_FINISHED;
     }
 
@@ -81,6 +133,7 @@ public class GameService {
 
       if (session.isGameOver()) {
         session.finish();
+        sessionRepository.save(session);
         return MoveResult.GAME_FINISHED;
       }
     }

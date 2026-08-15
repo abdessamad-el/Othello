@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.reversi.dto.MoveRequestDTO;
 import com.project.reversi.model.Board;
 import com.project.reversi.model.GameSession;
+import com.project.reversi.model.GameState;
 import com.project.reversi.model.GameType;
 import com.project.reversi.model.MoveResult;
 import com.project.reversi.model.Player;
@@ -24,7 +25,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -122,6 +125,37 @@ public class SessionControllerTest {
            .andExpect(status().isNotFound());
   }
 
+  @Test
+  @DisplayName("GET /api/v1/sessions/{id} returns a session to an anonymous spectator")
+  void getSessionIsPublicForSpectators() throws Exception {
+    SecurityContextHolder.clearContext();
+    GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
+    Mockito.when(gameSessionService.getSessionById(session.getSessionId())).thenReturn(session);
+
+    mockMvc.perform(get("/api/v1/sessions/" + session.getSessionId()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.sessionId", is(session.getSessionId())))
+           .andExpect(jsonPath("$.gameState", is("IN_PROGRESS")));
+  }
+
+  @Test
+  @DisplayName("GET /api/v1/sessions/{id} returns the final board and result")
+  void getCompletedSessionForSpectators() throws Exception {
+    SecurityContextHolder.clearContext();
+    GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
+    session.setGameState(GameState.BLACK_WINS);
+    session.setWhiteScore(21);
+    session.setBlackScore(43);
+    Mockito.when(gameSessionService.getSessionById(session.getSessionId())).thenReturn(session);
+
+    mockMvc.perform(get("/api/v1/sessions/" + session.getSessionId()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.board.boardCells", notNullValue()))
+           .andExpect(jsonPath("$.whiteScore", is(21)))
+           .andExpect(jsonPath("$.blackScore", is(43)))
+           .andExpect(jsonPath("$.gameState", is("BLACK_WINS")));
+  }
+
 
   @Test
   @DisplayName("GET /api/v1/sessions/{id}/board returns board DTO for session")
@@ -162,7 +196,13 @@ public class SessionControllerTest {
   @DisplayName("POST /api/v1/sessions/{id}/moves maps MoveResult to message and returns summary")
   void makeMoveSuccess() throws Exception {
     GameSession session = new GameSession(new Board(8, 8), new Player(PlayerColor.WHITE), GameType.PLAYER_VS_PLAYER);
-    Mockito.when(gameService.makeMove(Mockito.eq(session.getSessionId()), Mockito.anyInt(), Mockito.anyInt(), Mockito.eq(PlayerColor.WHITE)))
+    Mockito.when(gameService.makeMove(
+               Mockito.eq(session.getSessionId()),
+               Mockito.anyInt(),
+               Mockito.anyInt(),
+               Mockito.eq(PlayerColor.WHITE),
+               Mockito.any(User.class)
+           ))
            .thenReturn(MoveResult.SUCCESS);
     Mockito.when(gameService.getSessionById(session.getSessionId())).thenReturn(session);
 
@@ -178,5 +218,54 @@ public class SessionControllerTest {
            .andExpect(jsonPath("$.message", is("Move successful")))
            .andExpect(jsonPath("$.sessionSummary.sessionId", is(session.getSessionId())))
            .andExpect(jsonPath("$.sessionSummary.playerNicknames", notNullValue()));
+  }
+
+  @Test
+  @DisplayName("POST /api/v1/sessions/{id}/moves rejects an anonymous PVP move")
+  void makeMoveRejectsAnonymousPvpCaller() throws Exception {
+    SecurityContextHolder.clearContext();
+    String sessionId = "pvp-session";
+    Mockito.when(gameService.makeMove(
+               Mockito.eq(sessionId),
+               Mockito.anyInt(),
+               Mockito.anyInt(),
+               Mockito.eq(PlayerColor.WHITE),
+               Mockito.isNull()
+           ))
+           .thenThrow(new AuthenticationCredentialsNotFoundException("Authentication required"));
+
+    MoveRequestDTO request = new MoveRequestDTO();
+    request.setRow(2);
+    request.setColumn(3);
+    request.setColor(PlayerColor.WHITE);
+
+    mockMvc.perform(post("/api/v1/sessions/" + sessionId + "/moves")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+           .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("POST /api/v1/sessions/{id}/moves rejects a PVP move from a non-owner")
+  void makeMoveRejectsAuthenticatedNonOwner() throws Exception {
+    String sessionId = "pvp-session";
+    Mockito.when(gameService.makeMove(
+               Mockito.eq(sessionId),
+               Mockito.anyInt(),
+               Mockito.anyInt(),
+               Mockito.eq(PlayerColor.WHITE),
+               Mockito.any(User.class)
+           ))
+           .thenThrow(new AccessDeniedException("Player does not own this color"));
+
+    MoveRequestDTO request = new MoveRequestDTO();
+    request.setRow(2);
+    request.setColumn(3);
+    request.setColor(PlayerColor.WHITE);
+
+    mockMvc.perform(post("/api/v1/sessions/" + sessionId + "/moves")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+           .andExpect(status().isForbidden());
   }
 }
