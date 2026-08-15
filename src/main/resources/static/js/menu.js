@@ -32,8 +32,23 @@
     });
   }
 
+  function showWatchGameForm() {
+    const { overlay, overlayTitle, overlayBody } = Reversi.elements;
+    overlay.classList.remove("hidden");
+    overlayTitle.textContent = "Watch a Game";
+    overlayBody.innerHTML = `
+      <input type="text" id="spectatorSessionIdInput" placeholder="Enter Session ID" />
+      <button id="watchBtn">Watch</button>
+      <p id="spectatorError" class="form-error hidden" role="alert"></p>
+    `;
+    document.getElementById("watchBtn").addEventListener("click", function() {
+      window.Game.watchGame();
+    });
+  }
+
   window.Menu = {
     showNewGameOptions,
-    showJoinGameForm
+    showJoinGameForm,
+    showWatchGameForm
   };
 })();

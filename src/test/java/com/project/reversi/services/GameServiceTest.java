@@ -8,16 +8,21 @@ import com.project.reversi.model.MoveResult;
 import com.project.reversi.model.Piece;
 import com.project.reversi.model.Player;
 import com.project.reversi.model.PlayerColor;
+import com.project.reversi.model.User;
 import com.project.reversi.repository.JpaGameSessionRepository;
+import com.project.reversi.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
@@ -25,6 +30,9 @@ public class GameServiceTest {
 
   @Autowired
   private JpaGameSessionRepository repository;
+
+  @Autowired
+  private UserRepository userRepository;
 
 
   private GameService gameService;
@@ -35,6 +43,59 @@ public class GameServiceTest {
     ComputerMoveEngine computerMoveEngine = new ComputerMoveEngine(null);
     gameService = new GameService(repository, computerMoveEngine);
     gameSessionService = new GameSessionService(repository);
+  }
+
+  @Test
+  void authenticatedPvpMoveRequiresTheSubmittedColorOwner() {
+    User owner = userRepository.save(new User("white-owner", "password"));
+    User spectator = userRepository.save(new User("spectator", "password"));
+    Player white = new Player(PlayerColor.WHITE);
+    white.setAccount(owner);
+    GameSession session = gameSessionService.createGameSession(GameType.PLAYER_VS_PLAYER, white);
+
+    assertThrows(
+        AccessDeniedException.class,
+        () -> gameService.makeMove(session.getSessionId(), 2, 3, PlayerColor.WHITE, spectator)
+    );
+  }
+
+  @Test
+  void anonymousPvpMoveIsRejected() {
+    User owner = userRepository.save(new User("white-owner", "password"));
+    Player white = new Player(PlayerColor.WHITE);
+    white.setAccount(owner);
+    GameSession session = gameSessionService.createGameSession(GameType.PLAYER_VS_PLAYER, white);
+
+    assertThrows(
+        AuthenticationCredentialsNotFoundException.class,
+        () -> gameService.makeMove(session.getSessionId(), 2, 3, PlayerColor.WHITE, null)
+    );
+  }
+
+  @Test
+  void pvpColorOwnerCanMakeTheActivePlayersMove() {
+    User owner = userRepository.save(new User("white-owner", "password"));
+    Player white = new Player(PlayerColor.WHITE);
+    white.setAccount(owner);
+    GameSession session = gameSessionService.createGameSession(GameType.PLAYER_VS_PLAYER, white);
+
+    MoveResult result = gameService.makeMove(session.getSessionId(), 2, 4, PlayerColor.WHITE, owner);
+
+    assertEquals(MoveResult.SUCCESS, result);
+  }
+
+  @Test
+  void anonymousPlayerVsComputerMoveRemainsAllowed() {
+    GameSession session = gameSessionService.createGameSession(
+        GameType.PLAYER_VS_COMPUTER,
+        new Player(PlayerColor.WHITE)
+    );
+    session.setGameState(GameState.WHITE_WINS);
+    repository.save(session);
+
+    MoveResult result = gameService.makeMove(session.getSessionId(), 2, 4, PlayerColor.WHITE, null);
+
+    assertEquals(MoveResult.GAME_FINISHED, result);
   }
 
   @Test
@@ -101,6 +162,7 @@ public class GameServiceTest {
 
     GameSession saved = repository.findById(session.getSessionId()).orElseThrow();
     assertEquals(0, saved.getCurrentTurnIndex());
+    assertEquals(PlayerColor.BLACK, saved.getLastPassedPlayerColor());
   }
 
   @Test
@@ -214,4 +276,3 @@ public class GameServiceTest {
     public int getPieceCount(PlayerColor color) { return 5; }
   }
 }
-

@@ -51,6 +51,9 @@ public class GameSession {
   private int whiteScore;         // piece count for white
   private int blackScore;         // piece count for black
 
+  @Enumerated(EnumType.STRING)
+  private PlayerColor lastPassedPlayerColor;
+
 
   @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Player> players;   // Two players; for PVP, second can join later; for PVC, computer is auto-added.
@@ -163,6 +166,10 @@ public class GameSession {
     return blackScore;
   }
 
+  public PlayerColor getLastPassedPlayerColor() {
+    return lastPassedPlayerColor;
+  }
+
   public void setBlackScore(int blackScore) {
     this.blackScore = blackScore;
   }
@@ -262,8 +269,10 @@ public class GameSession {
   }
 
   public void advanceTurnWithPass() {
+    lastPassedPlayerColor = null;
     advanceTurn(); // switch to next player
     if (getCurrentPlayer() != null && !hasValidMove(getCurrentPlayer().getColor())) {
+      lastPassedPlayerColor = getCurrentPlayer().getColor();
       advanceTurn(); // pass
     }
   }

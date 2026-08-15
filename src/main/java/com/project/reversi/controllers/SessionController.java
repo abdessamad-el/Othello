@@ -15,6 +15,7 @@ import com.project.reversi.services.GameService;
 import com.project.reversi.services.GameSessionService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -166,7 +169,8 @@ public class SessionController {
   @PostMapping("/{sessionId}/moves")
   public ResponseEntity<MoveResponseDTO> makeMove(
       @PathVariable String sessionId,
-      @RequestBody MoveRequestDTO moveRequest
+      @RequestBody MoveRequestDTO moveRequest,
+      @AuthenticationPrincipal User currentUser
   ) {
     MoveResponseDTO response = new MoveResponseDTO();
     PlayerColor playerColor = moveRequest.getColor();
@@ -175,7 +179,8 @@ public class SessionController {
           sessionId,
           moveRequest.getRow(),
           moveRequest.getColumn(),
-          playerColor
+          playerColor,
+          currentUser
       );
 
       switch (result) {
@@ -200,6 +205,18 @@ public class SessionController {
           response
       );
       return ResponseEntity.ok(response);
+    }
+    catch (AuthenticationCredentialsNotFoundException e) {
+      response.setMessage("Authentication is required for PVP moves");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+    catch (AccessDeniedException e) {
+      response.setMessage("You do not own the requested player color");
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+    catch (NoSuchElementException e) {
+      response.setMessage("Session not found");
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
     catch (IllegalArgumentException e) {
       logger.error("Error processing move: {}", e.getMessage());
