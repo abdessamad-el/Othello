@@ -34,3 +34,6 @@ bin/
 
 ## Maeven ###
 target/
+
+### generated skills ###
+.agents/skills/

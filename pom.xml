@@ -76,6 +76,29 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>com.skillsjars</groupId>
+        <artifactId>maven-plugin</artifactId>
+        <version>0.0.7</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.skillsjars</groupId>
+            <artifactId>addyosmani__agent-skills__spec-driven-development</artifactId>
+            <version>2026_04_03-a806c63</version>
+          </dependency>
+          <dependency>
+            <groupId>com.skillsjars</groupId>
+            <artifactId>jabrena__cursor-rules-java__142-java-functional-programming</artifactId>
+            <version>2026_04_23-9d8c173</version>
+          </dependency>
+          <dependency>
+            <groupId>com.skillsjars</groupId>
+            <artifactId>addyosmani__agent-skills__test-driven-development</artifactId>
+            <version>2026_04_03-a806c63</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
